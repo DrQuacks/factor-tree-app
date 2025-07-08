@@ -97,21 +97,52 @@ export default function Home() {
       
       {/* Bottom Controls */}
       <div className="p-4 bg-white border-t border-gray-200">
-        <div className="flex justify-between items-center max-w-4xl mx-auto">
-          <ControlButtons
-            onFullyFactored={handleFullyFactored}
-            onHint={handleHint}
-            onSolution={handleSolution}
-            hintText={hintText}
-            showHint={showHint}
-            showSolution={showSolution}
-          />
+        <div 
+          className="flex mb-3"
+          style={{
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            width: '100%'
+          }}
+        >
+          {/* Left */}
+          <div className="flex gap-4">
+            <button 
+              className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition-colors"
+              onClick={handleHint}
+            >
+              Hint
+            </button>
+            <button 
+              className="px-4 py-2 rounded transition-colors"
+              style={{
+                backgroundColor: '#dc2626',
+                color: '#000000'
+              }}
+              onClick={handleSolution}
+            >
+              Solution
+            </button>
+          </div>
           
-          <div className="flex items-center space-x-4">
+          {/* Center */}
+          <button 
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+            onClick={handleFullyFactored}
+          >
+            Fully Factored
+          </button>
+          
+          {/* Right */}
+          <div className="flex items-center gap-4">
             <IncorrectMoves count={incorrectMoves} />
             <button 
+              className="px-4 py-2 rounded transition-colors"
+              style={{
+                backgroundColor: '#4b5563',
+                color: '#ffffff'
+              }}
               onClick={handleNewGame}
-              className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition-colors"
             >
               New Game
             </button>

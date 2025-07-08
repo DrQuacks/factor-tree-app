@@ -89,7 +89,7 @@ export default function FactorNode({
   return (
     <div className="flex flex-col items-center">
       <div 
-        className={`bg-white border-2 border-gray-300 rounded shadow cursor-pointer transition-all duration-300 hover:border-blue-400 ${
+        className={`bg-white border-2 border-gray-300 rounded shadow cursor-pointer transition-all duration-300 hover:border-blue-400 hover:shadow-lg hover:scale-105 ${
           isLarge ? 'text-8xl font-bold leading-none' : 'text-xl font-semibold'
         } ${
           showFeedback && feedbackType === 'correct' ? 'border-green-500 bg-green-50' : ''
@@ -97,9 +97,13 @@ export default function FactorNode({
           showFeedback && feedbackType === 'incorrect' ? 'border-red-500 bg-red-50' : ''
         }`}
         style={{
-          padding: isLarge ? '5px 10px' : '8px 16px'
+          padding: isLarge ? '5px 10px' : '8px 16px',
+          cursor: 'pointer'
         }}
         onClick={handleClick}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.cursor = 'pointer';
+        }}
       >
         {value}
         {getFeedbackIcon()}
