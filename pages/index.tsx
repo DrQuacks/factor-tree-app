@@ -70,7 +70,15 @@ export default function Home() {
       <Head>
         <title>Prime Factor Tree</title>
       </Head>
-      
+      {/* NavBar */}
+      <div className="w-full flex items-center justify-between px-6 py-3 bg-white border-b border-gray-200">
+        <img src="/images/main.png" alt="Logo" className="h-8 w-auto" />
+        <div className="flex gap-4">
+          <button className="px-4 py-2 rounded text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">Login</button>
+          <button className="px-4 py-2 rounded text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors">Sign Up</button>
+        </div>
+      </div>
+      {/* End NavBar */}
       {gameComplete && (
         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 text-center">
@@ -84,7 +92,6 @@ export default function Home() {
           </div>
         </div>
       )}
-      
       {/* Game Area - Takes up most of the screen */}
       <div className="flex-1 flex items-center justify-center p-8">
         <FactorTree
@@ -94,7 +101,6 @@ export default function Home() {
           showSolution={showSolution}
         />
       </div>
-      
       {/* Bottom Controls */}
       <div className="p-4 bg-white border-t border-gray-200">
         <div 
@@ -124,7 +130,6 @@ export default function Home() {
               Solution
             </button>
           </div>
-          
           {/* Center */}
           <button 
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
@@ -132,7 +137,6 @@ export default function Home() {
           >
             Fully Factored
           </button>
-          
           {/* Right */}
           <div className="flex items-center gap-4">
             <IncorrectMoves count={incorrectMoves} />
@@ -148,7 +152,6 @@ export default function Home() {
             </button>
           </div>
         </div>
-        
         <div className="text-center text-gray-500 text-sm mt-3">
           Click on numbers to factor them, or click "Fully Factored" when you think a number is prime.
         </div>

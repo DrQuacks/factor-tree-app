@@ -116,19 +116,35 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
     }, 2000);
   };
 
+  // Calculate the maximum depth of the tree
+  const getMaxDepth = () => {
+    if (treeData.length === 0) return 0;
+    return Math.max(...treeData.map(node => node.level));
+  };
+
+  // Calculate scale factor based on tree depth
+  const getScaleFactor = (level: number) => {
+    const maxDepth = getMaxDepth();
+    const baseScale = level === 0 ? 2.0 : 1.0; // Larger scale for root, normal for others
+    const scaleDecay = 0.75; // More gradual decay
+    
+    // Scale based on both the node's level and the overall tree depth
+    const levelScale = level === 0 ? 1.0 : Math.pow(scaleDecay, level - 1); // Don't decay the root
+    const depthScale = Math.pow(0.9, maxDepth); // Less aggressive depth scaling
+    
+    return baseScale * levelScale * depthScale;
+  };
+
   const renderNode = (node: TreeNode): React.ReactElement => {
     const feedback = feedbackStates[node.id] || { show: false, type: null };
-    
-    // Calculate scale based on level - start much larger for root
-    const baseScale = node.level === 0 ? 4.0 : 1;
-    const scale = baseScale / Math.pow(1.3, node.level);
+    const scaleFactor = getScaleFactor(node.level);
     
     return (
       <div key={node.id} className="flex flex-col items-center">
         <div 
           className="relative"
           style={{ 
-            transform: `translate(${node.x}px, ${node.y}px) scale(${scale})`,
+            transform: `translate(${node.x}px, ${node.y}px) scale(${scaleFactor})`,
             transition: 'all 0.5s ease-in-out'
           }}
         >
@@ -140,7 +156,7 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
             isFullyFactored={node.isPrime}
             showFeedback={feedback.show}
             feedbackType={feedback.type}
-            isLarge={node.level === 0}
+            scaleFactor={scaleFactor}
           />
         </div>
         
