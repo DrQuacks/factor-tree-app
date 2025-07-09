@@ -1,9 +1,8 @@
 import Head from 'next/head';
-import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import FactorTree from '../components/FactorTree';
-import ControlButtons from '../components/ControlButtons';
-import IncorrectMoves from '../components/IncorrectMoves';
+import NavBar from '../components/Navbar';
+import Footer from '../components/Footer';
 import { generateFactorTree, getNextHint, isPrime } from '../lib/factorUtils';
 
 export default function Home() {
@@ -71,28 +70,7 @@ export default function Home() {
       <Head>
         <title>Prime Factor Tree</title>
       </Head>
-      {/* NavBar */}
-      <div className="relative w-full flex items-center justify-between px-6 py-3" style={{ backgroundColor: '#FCF9F2' }}>
-        <div className="absolute top-3 left-3">
-          <Image 
-            src="/images/main.png" 
-            alt="Logo" 
-            width={300} 
-            height={300} 
-            className="object-contain"
-          />
-        </div>
-        <div className="flex gap-4 ml-auto">
-          <button className="px-4 py-2 rounded text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">Login</button>
-          <button 
-            className="px-4 py-2 rounded text-sm font-medium text-white"
-            style={{ backgroundColor: '#2B6C8D' }}
-          >
-            Sign Up
-          </button>
-        </div>
-      </div>
-      {/* End NavBar */}
+      <NavBar/>
       {gameComplete && (
         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 text-center">
@@ -115,63 +93,13 @@ export default function Home() {
           showSolution={showSolution}
         />
       </div>
-      {/* Bottom Controls */}
-      <div className="p-4 bg-white border-t border-gray-200" style={{ backgroundColor: '#FCF9F2' }}>
-        <div 
-          className="flex mb-3"
-          style={{
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            width: '100%'
-          }}
-        >
-          {/* Left */}
-          <div className="flex gap-4">
-            <button 
-              className="text-white px-4 py-2 rounded "
-              onClick={handleHint}
-              style={{ backgroundColor: '#008379' }}
-            >
-              Hint
-            </button>
-            <button 
-              className="px-4 py-2 rounded transition-colors"
-              style={{
-                backgroundColor: '#DB8C9B',
-                color: '#000000'
-              }}
-              onClick={handleSolution}
-            >
-              Solution
-            </button>
-          </div>
-          {/* Center */}
-          <button 
-            className="text-white px-4 py-2 rounded"
-            onClick={handleFullyFactored}
-            style={{ backgroundColor: '#376783' }}
-          >
-            Fully Factored
-          </button>
-          {/* Right */}
-          <div className="flex items-center gap-4">
-            <IncorrectMoves count={incorrectMoves} />
-            <button 
-              className="px-4 py-2 rounded transition-colors"
-              style={{
-                backgroundColor: '#008379',
-                color: '#ffffff'
-              }}
-              onClick={handleNewGame}
-            >
-              New Game
-            </button>
-          </div>
-        </div>
-        <div className="text-center text-gray-500 text-sm mt-3">
-          Click on numbers to factor them, or click "Fully Factored" when you think a number is prime.
-        </div>
-      </div>
+      <Footer 
+        handleHint={handleHint} 
+        handleSolution={handleSolution} 
+        handleFullyFactored={handleFullyFactored} 
+        incorrectMoves={incorrectMoves} 
+        handleNewGame={handleNewGame}
+      />
     </div>
   );
 }
