@@ -84,7 +84,12 @@ export default function Home() {
         </div>
         <div className="flex gap-4 ml-auto">
           <button className="px-4 py-2 rounded text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">Login</button>
-          <button className="px-4 py-2 rounded text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors">Sign Up</button>
+          <button 
+            className="px-4 py-2 rounded text-sm font-medium text-white"
+            style={{ backgroundColor: '#2B6C8D' }}
+          >
+            Sign Up
+          </button>
         </div>
       </div>
       {/* End NavBar */}
@@ -123,15 +128,16 @@ export default function Home() {
           {/* Left */}
           <div className="flex gap-4">
             <button 
-              className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition-colors"
+              className="text-white px-4 py-2 rounded "
               onClick={handleHint}
+              style={{ backgroundColor: '#008379' }}
             >
               Hint
             </button>
             <button 
               className="px-4 py-2 rounded transition-colors"
               style={{
-                backgroundColor: '#dc2626',
+                backgroundColor: '#DB8C9B',
                 color: '#000000'
               }}
               onClick={handleSolution}
@@ -141,8 +147,9 @@ export default function Home() {
           </div>
           {/* Center */}
           <button 
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+            className="text-white px-4 py-2 rounded"
             onClick={handleFullyFactored}
+            style={{ backgroundColor: '#376783' }}
           >
             Fully Factored
           </button>
@@ -152,7 +159,7 @@ export default function Home() {
             <button 
               className="px-4 py-2 rounded transition-colors"
               style={{
-                backgroundColor: '#4b5563',
+                backgroundColor: '#008379',
                 color: '#ffffff'
               }}
               onClick={handleNewGame}
