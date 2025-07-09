@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { FACTOR_TREE_CONSTANTS } from '../lib/constants';
 
 interface Props {
   value: number;
@@ -24,12 +25,30 @@ export default function FactorNode({
   const [showFactorInputs, setShowFactorInputs] = useState(false);
   const [factor1, setFactor1] = useState('');
   const [factor2, setFactor2] = useState('');
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [showLines, setShowLines] = useState(false);
 
   const handleClick = () => {
     if (isFullyFactored) {
       onCorrectMove();
     } else {
-      setShowFactorInputs(true);
+      // Phase 1: Start moving up
+      setIsAnimating(true);
+      
+      // Phase 2: Show factor inputs after move starts
+      setTimeout(() => {
+        setShowFactorInputs(true);
+      }, 400);
+      
+      // Phase 3: Show connecting lines after boxes appear
+      setTimeout(() => {
+        setShowLines(true);
+      }, 800);
+      
+      // Reset animation state
+      setTimeout(() => {
+        setIsAnimating(false);
+      }, 1200);
     }
   };
 
@@ -40,6 +59,7 @@ export default function FactorNode({
     if (f1 && f2 && f1 * f2 === value) {
       onFactor(f1, f2);
       setShowFactorInputs(false);
+      setShowLines(false);
       setFactor1('');
       setFactor2('');
     } else {
@@ -53,22 +73,44 @@ export default function FactorNode({
     }
   };
 
-  // Calculate dynamic sizes based on scale factor
-  const boxSize = Math.max(40, 80 * scaleFactor);
-  const fontSize = Math.max(12, 24 * scaleFactor);
-  const padding = Math.max(4, 8 * scaleFactor);
+  // Calculate dynamic sizes based on scale factor and constants
+  const boxSize = Math.max(
+    FACTOR_TREE_CONSTANTS.MIN_BOX_SIZE, 
+    FACTOR_TREE_CONSTANTS.BASE_BOX_SIZE * scaleFactor
+  );
+  const fontSize = Math.max(
+    FACTOR_TREE_CONSTANTS.MIN_FONT_SIZE, 
+    FACTOR_TREE_CONSTANTS.BASE_FONT_SIZE * scaleFactor
+  );
+  const padding = Math.max(
+    FACTOR_TREE_CONSTANTS.MIN_PADDING, 
+    FACTOR_TREE_CONSTANTS.BASE_PADDING * scaleFactor
+  );
+  
+  // Calculate child box dimensions and spacing
+  const childBoxSize = boxSize * FACTOR_TREE_CONSTANTS.CHILD_BOX_RATIO;
+  const verticalGap = boxSize * FACTOR_TREE_CONSTANTS.VERTICAL_GAP_RATIO;
+  const horizontalGap = boxSize * FACTOR_TREE_CONSTANTS.HORIZONTAL_GAP_RATIO;
+  
+  // Calculate SVG dimensions and line positions
+  const svgWidth = horizontalGap + childBoxSize; // Full width: gap + child box width
+  const svgHeight = verticalGap; // Just the spacing between parent and children
+  const parentCenterX = svgWidth / 2;
+  const leftChildCenterX = childBoxSize / 2; // Center of left child (half box width from left)
+  const rightChildCenterX = horizontalGap + childBoxSize / 2; // Center of right child
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center relative">
       {/* Main number box */}
       <div
-        className="relative cursor-pointer rounded-lg bg-white shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 flex items-center justify-center"
+        className="relative cursor-pointer rounded-lg bg-white shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center"
         style={{
           width: `${boxSize}px`,
           height: `${boxSize}px`,
           fontSize: `${fontSize}px`,
           padding: `${padding}px`,
-          border: '1px solid black'
+          border: '1px solid black',
+          transform: isAnimating ? 'translateY(-20px)' : 'translateY(0)'
         }}
         onClick={handleClick}
         onMouseEnter={(e) => {
@@ -90,20 +132,81 @@ export default function FactorNode({
         )}
       </div>
 
-      {/* Factor input boxes - only show after animation */}
+      {/* Diagonal connecting lines */}
+      {showLines && showFactorInputs && (
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+          {/* Line to left factor box */}
+          <svg
+            className="absolute"
+            style={{
+              top: `${boxSize}px`, // Start from bottom of parent box
+              left: '50%',
+              width: `${svgWidth}px`, // Width to cover both child boxes + gap
+              height: `${svgHeight}px`, // Height to reach child boxes
+              transform: 'translateX(-50%)'
+            }}
+          >
+            <line
+              x1={`${parentCenterX}px`} // Start from center of parent
+              y1="0" // Start from bottom of parent (top of SVG)
+              x2={`${leftChildCenterX}px`} // End at center of left child
+              y2={`${svgHeight}px`} // End at bottom of SVG (top of children)
+              stroke="black"
+              strokeWidth={FACTOR_TREE_CONSTANTS.LINE_STROKE_WIDTH}
+              style={{
+                animation: `drawLine ${FACTOR_TREE_CONSTANTS.LINE_ANIMATION_DURATION}s ease-out forwards`
+              }}
+            />
+          </svg>
+          
+          {/* Line to right factor box */}
+          <svg
+            className="absolute"
+            style={{
+              top: `${boxSize}px`, // Start from bottom of parent box
+              left: '50%',
+              width: `${svgWidth}px`, // Width to cover both child boxes + gap
+              height: `${svgHeight}px`, // Height to reach child boxes
+              transform: 'translateX(-50%)'
+            }}
+          >
+            <line
+              x1={`${parentCenterX}px`} // Start from center of parent
+              y1="0" // Start from bottom of parent (top of SVG)
+              x2={`${rightChildCenterX}px`} // End at center of right child
+              y2={`${svgHeight}px`} // End at bottom of SVG (top of children)
+              stroke="black"
+              strokeWidth={FACTOR_TREE_CONSTANTS.LINE_STROKE_WIDTH}
+              style={{
+                animation: `drawLine ${FACTOR_TREE_CONSTANTS.LINE_ANIMATION_DURATION}s ease-out forwards`
+              }}
+            />
+          </svg>
+        </div>
+      )}
+
+      {/* Factor input boxes */}
       {showFactorInputs && (
-        <div className="mt-4 flex gap-4 items-center">
+        <div 
+          className="mt-4 flex items-center"
+          style={{
+            gap: `${horizontalGap}px`,
+            marginTop: `${verticalGap}px`
+          }}
+        >
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             value={factor1}
             onChange={(e) => setFactor1(e.target.value)}
             onKeyPress={handleKeyPress}
-            className="rounded-lg text-center font-bold bg-white shadow-md hover:shadow-lg transition-all duration-200"
+            className="rounded-lg text-center font-bold bg-white shadow-md hover:shadow-lg transition-all duration-300"
             style={{
-              width: `${boxSize * 0.8}px`,
-              height: `${boxSize * 0.8}px`,
-              fontSize: `${fontSize * 0.8}px`,
-              padding: `${padding * 0.8}px`,
+              width: `${childBoxSize}px`,
+              height: `${childBoxSize}px`,
+              fontSize: `${fontSize * FACTOR_TREE_CONSTANTS.CHILD_FONT_RATIO}px`,
+              padding: `${padding * FACTOR_TREE_CONSTANTS.CHILD_PADDING_RATIO}px`,
               border: '1px solid black',
               WebkitAppearance: 'none',
               MozAppearance: 'textfield',
@@ -113,16 +216,18 @@ export default function FactorNode({
             autoFocus
           />
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             value={factor2}
             onChange={(e) => setFactor2(e.target.value)}
             onKeyPress={handleKeyPress}
-            className="rounded-lg text-center font-bold bg-white shadow-md hover:shadow-lg transition-all duration-200"
+            className="rounded-lg text-center font-bold bg-white shadow-md hover:shadow-lg transition-all duration-300"
             style={{
-              width: `${boxSize * 0.8}px`,
-              height: `${boxSize * 0.8}px`,
-              fontSize: `${fontSize * 0.8}px`,
-              padding: `${padding * 0.8}px`,
+              width: `${childBoxSize}px`,
+              height: `${childBoxSize}px`,
+              fontSize: `${fontSize * FACTOR_TREE_CONSTANTS.CHILD_FONT_RATIO}px`,
+              padding: `${padding * FACTOR_TREE_CONSTANTS.CHILD_PADDING_RATIO}px`,
               border: '1px solid black',
               WebkitAppearance: 'none',
               MozAppearance: 'textfield',

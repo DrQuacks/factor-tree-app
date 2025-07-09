@@ -145,7 +145,8 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
           className="relative"
           style={{ 
             transform: `translate(${node.x}px, ${node.y}px) scale(${scaleFactor})`,
-            transition: 'all 0.5s ease-in-out'
+            transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+            animation: node.level === 0 ? 'quickFadeIn 0.3s ease-out' : 'fadeInScale 0.5s ease-out'
           }}
         >
           <FactorNode
