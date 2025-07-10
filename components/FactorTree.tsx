@@ -45,7 +45,7 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
   const [treePositionModel, setTreePositionModel] = useState<TreePositionModel | null>(null);
   const [maxLevel, setMaxLevel] = useState(0);
   const [newNodes, setNewNodes] = useState<Set<string>>(new Set());
-  const [showLines, setShowLines] = useState(false);
+  const [newLines, setNewLines] = useState<Set<string>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Initialize tree with the starting number
@@ -74,12 +74,20 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
   // Clear new nodes and show lines after animation completes
   useEffect(() => {
     if (treePositionModel && newNodes.size > 0) {
+      // First: Let existing objects move (600ms)
+      // Then: Show new boxes (600ms delay)
+      // Finally: Show new lines (1200ms total)
       setTimeout(() => {
         setNewNodes(new Set());
-        setShowLines(true);
       }, 600);
+      
+      setTimeout(() => {
+        setNewLines(new Set());
+      }, 1200);
     }
   }, [treePositionModel, newNodes.size]);
+
+
 
   const handleFactor = (nodeId: string, factor1: number, factor2: number) => {
     setTreeData(prevData => {
@@ -117,8 +125,9 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
               setMaxLevel(childRow);
             }
 
-            // Track new nodes for animation
+            // Track new nodes and lines for animation
             setNewNodes(prev => new Set(Array.from(prev).concat([child1.id, child2.id])));
+            setNewLines(prev => new Set(Array.from(prev).concat([`${nodeId}-${child1.id}`, `${nodeId}-${child2.id}`])));
 
             return {
               ...node,
@@ -267,7 +276,7 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
           />
           
           {/* Render all connecting lines */}
-          {treePositionModel && showLines && (
+          {treePositionModel && (
             <svg
               className="absolute pointer-events-none"
               style={{
@@ -291,9 +300,12 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
                   const childCenterX = childX + getBoxWidth(child.row) / 2;
                   const childCenterY = childY; // Top of child
                   
+                  const lineKey = `${node.id}-${child.id}`;
+                  const isNewLine = newLines.has(lineKey);
+                  
                   return (
                     <line
-                      key={`${node.id}-${child.id}`}
+                      key={lineKey}
                       x1={parentCenterX}
                       y1={parentCenterY}
                       x2={childCenterX}
@@ -301,8 +313,9 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
                       stroke="black"
                       strokeWidth="1"
                       style={{
-                        transition: `x1 0.6s cubic-bezier(0.4, 0, 0.2, 1), y1 0.6s cubic-bezier(0.4, 0, 0.2, 1), x2 0.6s cubic-bezier(0.4, 0, 0.2, 1), y2 0.6s cubic-bezier(0.4, 0, 0.2, 1)`,
-                        animation: 'fadeIn 0.3s ease-in-out forwards',
+                        transition: `x1 0.6s cubic-bezier(0.4, 0, 0.2, 1), y1 0.6s cubic-bezier(0.4, 0, 0.2, 1), x2 0.6s cubic-bezier(0.4, 0, 0.2, 1), y2 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-in-out`,
+                        opacity: isNewLine ? 0 : 1,
+                        animation: isNewLine ? 'fadeIn 0.3s ease-in-out 0.6s forwards' : 'none',
                       }}
                     />
                   );
