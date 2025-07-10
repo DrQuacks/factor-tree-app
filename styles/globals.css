@@ -34,11 +34,8 @@ input[type="number"] {
 }
 
 @keyframes drawLine {
-  0% {
-    stroke-dasharray: 0 1000;
-  }
-  100% {
-    stroke-dasharray: 1000 0;
+  to {
+    stroke-dashoffset: 0;
   }
 }
 

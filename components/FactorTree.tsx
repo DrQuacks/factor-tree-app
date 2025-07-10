@@ -303,6 +303,11 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
                   const lineKey = `${node.id}-${child.id}`;
                   const isNewLine = newLines.has(lineKey);
                   
+                  // Calculate line length for draw animation
+                  const dx = childCenterX - parentCenterX;
+                  const dy = childCenterY - parentCenterY;
+                  const lineLength = Math.sqrt(dx * dx + dy * dy);
+
                   return (
                     <line
                       key={lineKey}
@@ -313,9 +318,15 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
                       stroke="black"
                       strokeWidth="1"
                       style={{
-                        transition: `x1 0.6s cubic-bezier(0.4, 0, 0.2, 1), y1 0.6s cubic-bezier(0.4, 0, 0.2, 1), x2 0.6s cubic-bezier(0.4, 0, 0.2, 1), y2 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-in-out`,
-                        opacity: isNewLine ? 0 : 1,
-                        animation: isNewLine ? 'fadeIn 0.3s ease-in-out 0.6s forwards' : 'none',
+                        transition: `x1 0.6s cubic-bezier(0.4, 0, 0.2, 1), y1 0.6s cubic-bezier(0.4, 0, 0.2, 1), x2 0.6s cubic-bezier(0.4, 0, 0.2, 1), y2 0.6s cubic-bezier(0.4, 0, 0.2, 1)` + (isNewLine ? '' : ', opacity 0.3s ease-in-out'),
+                        opacity: 1,
+                        ...(isNewLine
+                          ? {
+                              strokeDasharray: lineLength,
+                              strokeDashoffset: lineLength,
+                              animation: `drawLine 0.4s cubic-bezier(0.4,0,0.2,1) 0.6s forwards`,
+                            }
+                          : {}),
                       }}
                     />
                   );
