@@ -17,10 +17,8 @@ const generateTreeModel = (
     boxHeights: number[];
     boxWidths: number[];
 } => {
-    console.log('Generating tree model for', totalLevels, 'levels');
     const availableHeight = Math.floor(Math.tanh(totalLevels / 2) * viewHeight);
     const topPadding = Math.floor((viewHeight - availableHeight) / 2);
-    console.log('viewHeight:', viewHeight, 'availableHeight:', availableHeight, 'topPadding:', topPadding);
 
     const rootHeight = availableHeight * (1 - CHILD_RATIO) / (1 - (CHILD_RATIO ** totalLevels));
 
@@ -45,35 +43,44 @@ const generateTreeModel = (
         // Calculate the vertical position for the row
         const rowHeight = heights[level];
         const y = topPadding + heights.slice(0, level).reduce((sum, h) => sum + h, 0) + (rowHeight * GAP_PERCENT);
-        console.log(`Level ${level}: rowHeight=${rowHeight}, y=${y}`);
 
         // Calculate the horizontal starting position for the row
         const rowWidth = (boxWidths[level] * (1 + 2 * GAP_PERCENT)) * numNodes;
         const xStart = (viewWidth - rowWidth) / 2;
 
         for (let i = 0; i < numNodes; i++) {
+            console.log('level', level, 'i', i, 'positions', positions,);
+
             if (level === totalLevels - 1) {
                 // Bottom row: evenly space nodes horizontally
                 const x = xStart + i * (boxWidths[level] + 2 * boxWidths[level] * GAP_PERCENT) + boxWidths[level] * GAP_PERCENT;
                 row.push({ x, y });
             } else {
-                // Rows above: position nodes between their children
-                if (level + 1 < totalLevels && positions[level + 1]) {
-                    const leftChild = positions[level + 1][i * 2];
-                    const rightChild = positions[level + 1][i * 2 + 1];
+                if (level + 1 < totalLevels && positions[0]) {
+                    const leftChild = positions[0][i * 2];
+                    const rightChild = positions[0][i * 2 + 1];
                     if (leftChild && rightChild) {
-                        // Center the parent between its children (no horizontal padding for parent nodes)
-                        const x = (leftChild.x + rightChild.x) / 2 - boxWidths[level] / 2;
-                        console.log(`Level ${level}, node ${i}: leftChild.x=${leftChild.x}, rightChild.x=${rightChild.x}, parent.x=${x}`);
+                        // Calculate the center of each child's box
+                        const leftChildCenterX = leftChild.x + boxWidths[level + 1] / 2;
+                        const rightChildCenterX = rightChild.x + boxWidths[level + 1] / 2;
+                        
+                        // Center the parent over the space occupied by its children
+                        const x = (leftChildCenterX + rightChildCenterX) / 2 - boxWidths[level] / 2;
+                        console.log(`Level ${level}, node ${i}: leftChildCenterX=${leftChildCenterX}, rightChildCenterX=${rightChildCenterX}, parent.x=${x}`);
                         row.push({ x, y });
                     } else {
-                        // Fallback: center the node
-                        const x = viewWidth / 2 - boxWidths[level] / 2;
+                        // If we don't have children, position based on the row structure
+                        const rowWidth = (boxWidths[level] * (1 + 2 * GAP_PERCENT)) * numNodes;
+                        const xStart = (viewWidth - rowWidth) / 2;
+                        const x = xStart + i * (boxWidths[level] + 2 * boxWidths[level] * GAP_PERCENT) + boxWidths[level] * GAP_PERCENT;
                         row.push({ x, y });
                     }
                 } else {
-                    // Fallback: center the node
-                    const x = viewWidth / 2 - boxWidths[level] / 2;
+                    console.log('DEV WARNING: Non botom row should always have children')
+                    // If we don't have children, position based on the row structure
+                    const rowWidth = (boxWidths[level] * (1 + 2 * GAP_PERCENT)) * numNodes;
+                    const xStart = (viewWidth - rowWidth) / 2;
+                    const x = xStart + i * (boxWidths[level] + 2 * boxWidths[level] * GAP_PERCENT) + boxWidths[level] * GAP_PERCENT;
                     row.push({ x, y });
                 }
             }
@@ -81,6 +88,8 @@ const generateTreeModel = (
 
         positions.unshift(row); // Add the row to the beginning of the array
     }
+
+    console.log(`After adding level, level 1 positions:`, positions[totalLevels - 1 - 1]);
 
     return { positions, boxHeights, boxWidths };
 };

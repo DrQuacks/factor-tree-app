@@ -57,10 +57,8 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
 
   // Generate tree position model when max level changes
   useEffect(() => {
-    console.log('Effect running with maxLevel:', maxLevel);
     if (containerRef.current && maxLevel >= 0) {
       const rect = containerRef.current.getBoundingClientRect();
-      console.log('Container dimensions:', rect.width, rect.height, 'maxLevel:', maxLevel);
       
       if (rect.width > 0 && rect.height > 0) {
         const newModel = generateTreeModel({
@@ -68,14 +66,8 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
           viewWidth: rect.width,
           totalLevels: maxLevel + 1
         });
-        console.log('Generated positions:', newModel.positions);
-        console.log('Generated box sizes:', newModel.boxHeights, newModel.boxWidths);
         setTreePositionModel(newModel);
-      } else {
-        console.log('Container not ready - width:', rect.width, 'height:', rect.height);
       }
-    } else {
-      console.log('Container ref not ready or maxLevel < 0');
     }
   }, [maxLevel]);
 
@@ -90,7 +82,6 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
   }, [treePositionModel, newNodes.size]);
 
   const handleFactor = (nodeId: string, factor1: number, factor2: number) => {
-    console.log('handleFactor called for node:', nodeId, 'with factors:', factor1, factor2);
     setTreeData(prevData => {
       if (!prevData) return [];
 
@@ -101,8 +92,7 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
             const leftChildColumn = node.column * 2;
             const rightChildColumn = node.column * 2 + 1;
 
-            console.log('Creating children for node', nodeId, 'at row', node.row, 'col', node.column);
-            console.log('Child row will be:', childRow, 'columns:', leftChildColumn, rightChildColumn);
+
 
             // Create child nodes
             const child1: TreeNode = {
@@ -124,10 +114,7 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
 
             // Update max level if needed
             if (childRow > maxLevel) {
-              console.log('Updating maxLevel from', maxLevel, 'to', childRow);
               setMaxLevel(childRow);
-            } else {
-              console.log('No maxLevel update needed, current:', maxLevel, 'childRow:', childRow);
             }
 
             // Track new nodes for animation
@@ -151,7 +138,6 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
   };
 
   const handleNodeClick = (nodeId: string, isFullyFactored: boolean) => {
-    console.log('handleNodeClick called for node:', nodeId, 'isFullyFactored:', isFullyFactored);
     if (!treeData) return;
 
     const findNode = (nodes: TreeNode[], nodeId: string): TreeNode | null => {
@@ -164,20 +150,16 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
     };
 
     const node = findNode(treeData, nodeId);
-    console.log('Found node:', node);
     if (!node) return;
 
     if (isFullyFactored) {
-      console.log('Node is fully factored, checking if prime');
       if (node.isPrime) {
-        console.log('Node is prime - correct move');
         onCorrectMove();
         setFeedbackStates(prev => ({
           ...prev,
           [nodeId]: { show: true, type: 'correct' }
         }));
       } else {
-        console.log('Node is not prime - incorrect move');
         onIncorrectMove();
         setFeedbackStates(prev => ({
           ...prev,
@@ -185,16 +167,13 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
         }));
       }
     } else {
-      console.log('Node is not fully factored, checking if prime');
       if (node.isPrime) {
-        console.log('Node is prime - incorrect move');
         onIncorrectMove();
         setFeedbackStates(prev => ({
           ...prev,
           [nodeId]: { show: true, type: 'incorrect' }
         }));
       } else {
-        console.log('Node is not prime - creating factor tree');
         // Automatically create the factor tree for this node
         const factors = getFactorPair(node.value);
         if (factors) {
@@ -241,9 +220,6 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
     // Get position from treePositionModel
     const x = treePositionModel?.positions[node.row]?.[node.column]?.x || 0;
     const y = treePositionModel?.positions[node.row]?.[node.column]?.y || 0;
-    
-    console.log(`Rendering node ${node.id} (row: ${node.row}, col: ${node.column}) at (${x}, ${y})`);
-    console.log('treePositionModel available:', !!treePositionModel, 'positions for row:', treePositionModel?.positions[node.row]);
 
     return (
       <div key={node.id} className="absolute">

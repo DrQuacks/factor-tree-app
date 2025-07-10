@@ -35,7 +35,6 @@ export default function FactorNode({
   const [showLines, setShowLines] = useState(false);
 
   const handleClick = () => {
-    console.log('FactorNode handleClick called, isFullyFactored:', isFullyFactored, 'value:', value);
     // Call the parent's click handler instead of handling it internally
     onNodeClick(nodeId, isFullyFactored);
   };
@@ -44,17 +43,13 @@ export default function FactorNode({
     const f1 = parseInt(factor1);
     const f2 = parseInt(factor2);
     
-    console.log('handleFactorSubmit called with factors:', f1, f2, 'target value:', value);
-    
     if (f1 && f2 && f1 * f2 === value) {
-      console.log('Factors are correct, calling onFactor');
       onFactor(f1, f2);
       setShowFactorInputs(false);
       setShowLines(false);
       setFactor1('');
       setFactor2('');
     } else {
-      console.log('Factors are incorrect, calling onIncorrectMove');
       onIncorrectMove();
     }
   };
