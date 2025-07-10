@@ -1,6 +1,36 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import FactorNode from './FactorNode';
-import { isPrime, generateFactorTree, getNextHint, FactorTreeNode } from '../lib/factorUtils';
+import { isPrime, getFactorPair } from '../lib/factorUtils';
+import { generateTreeModel } from '../lib/generateTreeModel';
+
+// Define the TreeNode type with ONLY row/column positioning
+type TreeNode = {
+  id: string;
+  value: number;
+  isPrime: boolean;
+  children: TreeNode[];
+  row: number; // Tree level (0 = root)
+  column: number; // Position within the level (0-based)
+};
+
+// Tree position model type
+type TreePositionModel = {
+  positions: { x: number, y: number }[][];
+  boxHeights: number[];
+  boxWidths: number[];
+};
+
+// Ensure generateFactorTree returns TreeNode
+const generateFactorTree = (number: number): TreeNode => {
+  return {
+    id: 'root',
+    value: number,
+    isPrime: isPrime(number),
+    children: [],
+    row: 0,
+    column: 0,
+  };
+};
 
 interface Props {
   initialNumber: number;
@@ -9,87 +39,145 @@ interface Props {
   showSolution: boolean;
 }
 
-interface TreeNode {
-  value: number;
-  isPrime: boolean;
-  children: TreeNode[];
-  x: number;
-  y: number;
-  id: string;
-  level: number;
-}
-
 export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMove, showSolution }: Props) {
   const [treeData, setTreeData] = useState<TreeNode[]>([]);
   const [feedbackStates, setFeedbackStates] = useState<Record<string, { show: boolean; type: 'correct' | 'incorrect' | null }>>({});
+  const [treePositionModel, setTreePositionModel] = useState<TreePositionModel | null>(null);
+  const [maxLevel, setMaxLevel] = useState(0);
+  const [newNodes, setNewNodes] = useState<Set<string>>(new Set());
+  const [showLines, setShowLines] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Initialize tree with the starting number
   useEffect(() => {
-    const rootNode: TreeNode = {
-      value: initialNumber,
-      isPrime: isPrime(initialNumber),
-      children: [],
-      x: 0,
-      y: 0,
-      id: 'root',
-      level: 0
-    };
+    const rootNode: TreeNode = generateFactorTree(initialNumber);
     setTreeData([rootNode]);
+    setMaxLevel(0);
   }, [initialNumber]);
 
-  const handleFactor = (nodeId: string, factor1: number, factor2: number) => {
-    setTreeData(prevData => {
-      const newData = [...prevData];
-      const nodeIndex = newData.findIndex(node => node.id === nodeId);
+  // Generate tree position model when max level changes
+  useEffect(() => {
+    console.log('Effect running with maxLevel:', maxLevel);
+    if (containerRef.current && maxLevel >= 0) {
+      const rect = containerRef.current.getBoundingClientRect();
+      console.log('Container dimensions:', rect.width, rect.height, 'maxLevel:', maxLevel);
       
-      if (nodeIndex !== -1) {
-        const node = newData[nodeIndex];
-        const childLevel = node.level + 1;
-        
-        // Calculate spacing based on level - start with larger spacing
-        const baseSpacing = 300;
-        const spacing = baseSpacing / Math.pow(1.4, childLevel);
-        
-        const child1: TreeNode = {
-          value: factor1,
-          isPrime: isPrime(factor1),
-          children: [],
-          x: node.x - spacing,
-          y: node.y + 150,
-          id: `${nodeId}-left`,
-          level: childLevel
-        };
-        const child2: TreeNode = {
-          value: factor2,
-          isPrime: isPrime(factor2),
-          children: [],
-          x: node.x + spacing,
-          y: node.y + 150,
-          id: `${nodeId}-right`,
-          level: childLevel
-        };
-        
-        newData[nodeIndex] = { ...node, children: [child1, child2] };
-        newData.push(child1, child2);
+      if (rect.width > 0 && rect.height > 0) {
+        const newModel = generateTreeModel({
+          viewHeight: rect.height,
+          viewWidth: rect.width,
+          totalLevels: maxLevel + 1
+        });
+        console.log('Generated positions:', newModel.positions);
+        console.log('Generated box sizes:', newModel.boxHeights, newModel.boxWidths);
+        setTreePositionModel(newModel);
+      } else {
+        console.log('Container not ready - width:', rect.width, 'height:', rect.height);
       }
-      
-      return newData;
+    } else {
+      console.log('Container ref not ready or maxLevel < 0');
+    }
+  }, [maxLevel]);
+
+  // Clear new nodes and show lines after animation completes
+  useEffect(() => {
+    if (treePositionModel && newNodes.size > 0) {
+      setTimeout(() => {
+        setNewNodes(new Set());
+        setShowLines(true);
+      }, 600);
+    }
+  }, [treePositionModel, newNodes.size]);
+
+  const handleFactor = (nodeId: string, factor1: number, factor2: number) => {
+    console.log('handleFactor called for node:', nodeId, 'with factors:', factor1, factor2);
+    setTreeData(prevData => {
+      if (!prevData) return [];
+
+      const updateNode = (nodes: TreeNode[]): TreeNode[] => {
+        return nodes.map(node => {
+          if (node.id === nodeId) {
+            const childRow = node.row + 1;
+            const leftChildColumn = node.column * 2;
+            const rightChildColumn = node.column * 2 + 1;
+
+            console.log('Creating children for node', nodeId, 'at row', node.row, 'col', node.column);
+            console.log('Child row will be:', childRow, 'columns:', leftChildColumn, rightChildColumn);
+
+            // Create child nodes
+            const child1: TreeNode = {
+              id: `${nodeId}-left`,
+              value: factor1,
+              isPrime: isPrime(factor1),
+              children: [],
+              row: childRow,
+              column: leftChildColumn,
+            };
+            const child2: TreeNode = {
+              id: `${nodeId}-right`,
+              value: factor2,
+              isPrime: isPrime(factor2),
+              children: [],
+              row: childRow,
+              column: rightChildColumn,
+            };
+
+            // Update max level if needed
+            if (childRow > maxLevel) {
+              console.log('Updating maxLevel from', maxLevel, 'to', childRow);
+              setMaxLevel(childRow);
+            } else {
+              console.log('No maxLevel update needed, current:', maxLevel, 'childRow:', childRow);
+            }
+
+            // Track new nodes for animation
+            setNewNodes(prev => new Set(Array.from(prev).concat([child1.id, child2.id])));
+
+            return {
+              ...node,
+              children: [child1, child2],
+            };
+          }
+
+          return {
+            ...node,
+            children: updateNode(node.children),
+          };
+        });
+      };
+
+      return updateNode(prevData);
     });
   };
 
   const handleNodeClick = (nodeId: string, isFullyFactored: boolean) => {
-    const node = treeData.find(n => n.id === nodeId);
+    console.log('handleNodeClick called for node:', nodeId, 'isFullyFactored:', isFullyFactored);
+    if (!treeData) return;
+
+    const findNode = (nodes: TreeNode[], nodeId: string): TreeNode | null => {
+      for (const node of nodes) {
+        if (node.id === nodeId) return node;
+        const found = findNode(node.children, nodeId);
+        if (found) return found;
+      }
+      return null;
+    };
+
+    const node = findNode(treeData, nodeId);
+    console.log('Found node:', node);
     if (!node) return;
 
     if (isFullyFactored) {
-      // User thinks it's fully factored
+      console.log('Node is fully factored, checking if prime');
       if (node.isPrime) {
+        console.log('Node is prime - correct move');
         onCorrectMove();
         setFeedbackStates(prev => ({
           ...prev,
           [nodeId]: { show: true, type: 'correct' }
         }));
       } else {
+        console.log('Node is not prime - incorrect move');
         onIncorrectMove();
         setFeedbackStates(prev => ({
           ...prev,
@@ -97,17 +185,24 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
         }));
       }
     } else {
-      // User thinks it's not fully factored
+      console.log('Node is not fully factored, checking if prime');
       if (node.isPrime) {
+        console.log('Node is prime - incorrect move');
         onIncorrectMove();
         setFeedbackStates(prev => ({
           ...prev,
           [nodeId]: { show: true, type: 'incorrect' }
         }));
+      } else {
+        console.log('Node is not prime - creating factor tree');
+        // Automatically create the factor tree for this node
+        const factors = getFactorPair(node.value);
+        if (factors) {
+          handleFactor(nodeId, factors[0], factors[1]);
+        }
       }
     }
 
-    // Clear feedback after 2 seconds
     setTimeout(() => {
       setFeedbackStates(prev => ({
         ...prev,
@@ -116,37 +211,49 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
     }, 2000);
   };
 
-  // Calculate the maximum depth of the tree
-  const getMaxDepth = () => {
-    if (treeData.length === 0) return 0;
-    return Math.max(...treeData.map(node => node.level));
+  // Get box height from tree position model
+  const getBoxHeight = (level: number) => {
+    if (!treePositionModel) return 60;
+    return treePositionModel.boxHeights[level] || 60;
   };
 
-  // Calculate scale factor based on tree depth
-  const getScaleFactor = (level: number) => {
-    const maxDepth = getMaxDepth();
-    const baseScale = level === 0 ? 2.0 : 1.0; // Larger scale for root, normal for others
-    const scaleDecay = 0.75; // More gradual decay
-    
-    // Scale based on both the node's level and the overall tree depth
-    const levelScale = level === 0 ? 1.0 : Math.pow(scaleDecay, level - 1); // Don't decay the root
-    const depthScale = Math.pow(0.9, maxDepth); // Less aggressive depth scaling
-    
-    return baseScale * levelScale * depthScale;
+  // Get box width from tree position model
+  const getBoxWidth = (level: number) => {
+    if (!treePositionModel) return 90; // Default width (aspect ratio 3:2)
+    return treePositionModel.boxWidths[level] || 90;
+  };
+
+  // Flatten tree to get all nodes for rendering
+  const getAllNodes = (nodes: TreeNode[]): TreeNode[] => {
+    const allNodes: TreeNode[] = [];
+    const traverse = (node: TreeNode) => {
+      allNodes.push(node);
+      node.children.forEach(traverse);
+    };
+    nodes.forEach(traverse);
+    return allNodes;
   };
 
   const renderNode = (node: TreeNode): React.ReactElement => {
     const feedback = feedbackStates[node.id] || { show: false, type: null };
-    const scaleFactor = getScaleFactor(node.level);
+    const isNewNode = newNodes.has(node.id);
     
+    // Get position from treePositionModel
+    const x = treePositionModel?.positions[node.row]?.[node.column]?.x || 0;
+    const y = treePositionModel?.positions[node.row]?.[node.column]?.y || 0;
+    
+    console.log(`Rendering node ${node.id} (row: ${node.row}, col: ${node.column}) at (${x}, ${y})`);
+    console.log('treePositionModel available:', !!treePositionModel, 'positions for row:', treePositionModel?.positions[node.row]);
+
     return (
-      <div key={node.id} className="flex flex-col items-center">
-        <div 
+      <div key={node.id} className="absolute">
+        <div
           className="relative"
-          style={{ 
-            transform: `translate(${node.x}px, ${node.y}px) scale(${scaleFactor})`,
-            transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
-            animation: node.level === 0 ? 'quickFadeIn 0.3s ease-out' : 'fadeInScale 0.5s ease-out'
+          style={{
+            transform: `translate(${x}px, ${y}px)`,
+            transition: `transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.6s ease-in-out`,
+            opacity: isNewNode ? 0 : 1,
+            animation: isNewNode ? 'fadeIn 0.6s ease-in-out 0.6s forwards' : 'none',
           }}
         >
           <FactorNode
@@ -154,40 +261,85 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
             onIncorrectMove={() => handleNodeClick(node.id, false)}
             onCorrectMove={() => handleNodeClick(node.id, true)}
             onFactor={(f1, f2) => handleFactor(node.id, f1, f2)}
+            onNodeClick={handleNodeClick}
+            nodeId={node.id}
             isFullyFactored={node.isPrime}
             showFeedback={feedback.show}
             feedbackType={feedback.type}
-            scaleFactor={scaleFactor}
+            boxHeight={getBoxHeight(node.row)}
+            boxWidth={getBoxWidth(node.row)}
           />
         </div>
-        
-        {node.children.length > 0 && (
-          <div className="flex justify-center mt-6">
-            <div className="flex space-x-40">
-              {node.children.map((child, index) => (
-                <div key={child.id} className="flex flex-col items-center">
-                  <div className="w-px h-10 bg-gray-300"></div>
-                  {renderNode(child)}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     );
   };
-
-  useEffect(() => {
-    if (showSolution) {
-      const solutionTree = generateFactorTree(initialNumber);
-      // Convert solution tree to display format
-      // This would show the complete factor tree
-    }
-  }, [showSolution, initialNumber]);
-
-  return (
-    <div className="w-full h-full flex items-center justify-center" style={{ minHeight: '70vh' }}>
-      {treeData.length > 0 && renderNode(treeData[0])}
-    </div>
-  );
-} 
+  
+  const renderTree = (nodes: TreeNode[]): React.ReactElement => {
+    const allNodes = getAllNodes(nodes);
+    
+    return (
+      <div 
+        ref={containerRef}
+        className="w-full h-full flex items-center justify-center" 
+        style={{ height: '100%' }}
+      >
+        <div className="relative w-full h-full">
+          {/* Vertical center line for debugging */}
+          <div 
+            className="absolute top-0 bottom-0 w-px bg-red-500 z-10"
+            style={{ left: '50%', transform: 'translateX(-50%)' }}
+          />
+          
+          {/* Render all connecting lines */}
+          {treePositionModel && showLines && (
+            <svg
+              className="absolute pointer-events-none"
+              style={{
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                zIndex: 0,
+              }}
+            >
+              {allNodes.map((node) => 
+                node.children.map((child) => {
+                  const nodeX = treePositionModel.positions[node.row]?.[node.column]?.x || 0;
+                  const nodeY = treePositionModel.positions[node.row]?.[node.column]?.y || 0;
+                  const childX = treePositionModel.positions[child.row]?.[child.column]?.x || 0;
+                  const childY = treePositionModel.positions[child.row]?.[child.column]?.y || 0;
+                  
+                  // Calculate line start and end points
+                  const parentCenterX = nodeX + getBoxWidth(node.row) / 2;
+                  const parentCenterY = nodeY + getBoxHeight(node.row); // Bottom of parent
+                  const childCenterX = childX + getBoxWidth(child.row) / 2;
+                  const childCenterY = childY; // Top of child
+                  
+                  return (
+                    <line
+                      key={`${node.id}-${child.id}`}
+                      x1={parentCenterX}
+                      y1={parentCenterY}
+                      x2={childCenterX}
+                      y2={childCenterY}
+                      stroke="black"
+                      strokeWidth="1"
+                      style={{
+                        transition: `x1 0.6s cubic-bezier(0.4, 0, 0.2, 1), y1 0.6s cubic-bezier(0.4, 0, 0.2, 1), x2 0.6s cubic-bezier(0.4, 0, 0.2, 1), y2 0.6s cubic-bezier(0.4, 0, 0.2, 1)`,
+                        animation: 'fadeIn 0.3s ease-in-out forwards',
+                      }}
+                    />
+                  );
+                })
+              )}
+            </svg>
+          )}
+          
+          {allNodes.map((node) => renderNode(node))}
+        </div>
+      </div>
+    );
+  };
+  
+  return treeData ? renderTree(treeData) : null;
+}

@@ -6,10 +6,13 @@ interface Props {
   onIncorrectMove: () => void;
   onCorrectMove: () => void;
   onFactor: (factor1: number, factor2: number) => void;
+  onNodeClick: (nodeId: string, isFullyFactored: boolean) => void;
+  nodeId: string;
   isFullyFactored: boolean;
   showFeedback: boolean;
   feedbackType: 'correct' | 'incorrect' | null;
-  scaleFactor: number;
+  boxHeight: number;
+  boxWidth: number;
 }
 
 export default function FactorNode({
@@ -17,10 +20,13 @@ export default function FactorNode({
   onIncorrectMove,
   onCorrectMove,
   onFactor,
+  onNodeClick,
+  nodeId,
   isFullyFactored,
   showFeedback,
   feedbackType,
-  scaleFactor
+  boxHeight,
+  boxWidth
 }: Props) {
   const [showFactorInputs, setShowFactorInputs] = useState(false);
   const [factor1, setFactor1] = useState('');
@@ -29,40 +35,26 @@ export default function FactorNode({
   const [showLines, setShowLines] = useState(false);
 
   const handleClick = () => {
-    if (isFullyFactored) {
-      onCorrectMove();
-    } else {
-      // Phase 1: Start moving up
-      setIsAnimating(true);
-      
-      // Phase 2: Show factor inputs after move starts
-      setTimeout(() => {
-        setShowFactorInputs(true);
-      }, 400);
-      
-      // Phase 3: Show connecting lines after boxes appear
-      setTimeout(() => {
-        setShowLines(true);
-      }, 800);
-      
-      // Reset animation state
-      setTimeout(() => {
-        setIsAnimating(false);
-      }, 1200);
-    }
+    console.log('FactorNode handleClick called, isFullyFactored:', isFullyFactored, 'value:', value);
+    // Call the parent's click handler instead of handling it internally
+    onNodeClick(nodeId, isFullyFactored);
   };
 
   const handleFactorSubmit = () => {
     const f1 = parseInt(factor1);
     const f2 = parseInt(factor2);
     
+    console.log('handleFactorSubmit called with factors:', f1, f2, 'target value:', value);
+    
     if (f1 && f2 && f1 * f2 === value) {
+      console.log('Factors are correct, calling onFactor');
       onFactor(f1, f2);
       setShowFactorInputs(false);
       setShowLines(false);
       setFactor1('');
       setFactor2('');
     } else {
+      console.log('Factors are incorrect, calling onIncorrectMove');
       onIncorrectMove();
     }
   };
@@ -73,31 +65,28 @@ export default function FactorNode({
     }
   };
 
-  // Calculate dynamic sizes based on scale factor and constants
-  const boxSize = Math.max(
-    FACTOR_TREE_CONSTANTS.MIN_BOX_SIZE, 
-    FACTOR_TREE_CONSTANTS.BASE_BOX_SIZE * scaleFactor
-  );
+  // Use the provided box dimensions directly
   const fontSize = Math.max(
     FACTOR_TREE_CONSTANTS.MIN_FONT_SIZE, 
-    FACTOR_TREE_CONSTANTS.BASE_FONT_SIZE * scaleFactor
+    boxHeight * 0.3 // Font size as 30% of box height
   );
   const padding = Math.max(
     FACTOR_TREE_CONSTANTS.MIN_PADDING, 
-    FACTOR_TREE_CONSTANTS.BASE_PADDING * scaleFactor
+    boxHeight * 0.1 // Padding as 10% of box height
   );
   
   // Calculate child box dimensions and spacing
-  const childBoxSize = boxSize * FACTOR_TREE_CONSTANTS.CHILD_BOX_RATIO;
-  const verticalGap = boxSize * FACTOR_TREE_CONSTANTS.VERTICAL_GAP_RATIO;
-  const horizontalGap = boxSize * FACTOR_TREE_CONSTANTS.HORIZONTAL_GAP_RATIO;
+  const childBoxHeight = boxHeight * FACTOR_TREE_CONSTANTS.CHILD_BOX_RATIO;
+  const childBoxWidth = boxWidth * FACTOR_TREE_CONSTANTS.CHILD_BOX_RATIO;
+  const verticalGap = boxHeight * FACTOR_TREE_CONSTANTS.VERTICAL_GAP_RATIO;
+  const horizontalGap = boxWidth * FACTOR_TREE_CONSTANTS.HORIZONTAL_GAP_RATIO;
   
   // Calculate SVG dimensions and line positions
-  const svgWidth = horizontalGap + childBoxSize; // Full width: gap + child box width
+  const svgWidth = horizontalGap + childBoxWidth; // Full width: gap + child box width
   const svgHeight = verticalGap; // Just the spacing between parent and children
   const parentCenterX = svgWidth / 2;
-  const leftChildCenterX = childBoxSize / 2; // Center of left child (half box width from left)
-  const rightChildCenterX = horizontalGap + childBoxSize / 2; // Center of right child
+  const leftChildCenterX = childBoxWidth / 2; // Center of left child (half box width from left)
+  const rightChildCenterX = horizontalGap + childBoxWidth / 2; // Center of right child
 
   return (
     <div className="flex flex-col items-center relative">
@@ -105,8 +94,8 @@ export default function FactorNode({
       <div
         className="relative cursor-pointer rounded-lg bg-white shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center"
         style={{
-          width: `${boxSize}px`,
-          height: `${boxSize}px`,
+          width: `${boxWidth}px`,
+          height: `${boxHeight}px`,
           fontSize: `${fontSize}px`,
           padding: `${padding}px`,
           border: '1px solid black',
@@ -139,7 +128,7 @@ export default function FactorNode({
           <svg
             className="absolute"
             style={{
-              top: `${boxSize}px`, // Start from bottom of parent box
+              top: `${boxHeight}px`, // Start from bottom of parent box
               left: '50%',
               width: `${svgWidth}px`, // Width to cover both child boxes + gap
               height: `${svgHeight}px`, // Height to reach child boxes
@@ -163,7 +152,7 @@ export default function FactorNode({
           <svg
             className="absolute"
             style={{
-              top: `${boxSize}px`, // Start from bottom of parent box
+              top: `${boxHeight}px`, // Start from bottom of parent box
               left: '50%',
               width: `${svgWidth}px`, // Width to cover both child boxes + gap
               height: `${svgHeight}px`, // Height to reach child boxes
@@ -203,8 +192,8 @@ export default function FactorNode({
             onKeyPress={handleKeyPress}
             className="rounded-lg text-center font-bold bg-white shadow-md hover:shadow-lg transition-all duration-300"
             style={{
-              width: `${childBoxSize}px`,
-              height: `${childBoxSize}px`,
+              width: `${childBoxWidth}px`,
+              height: `${childBoxHeight}px`,
               fontSize: `${fontSize * FACTOR_TREE_CONSTANTS.CHILD_FONT_RATIO}px`,
               padding: `${padding * FACTOR_TREE_CONSTANTS.CHILD_PADDING_RATIO}px`,
               border: '1px solid black',
@@ -224,8 +213,8 @@ export default function FactorNode({
             onKeyPress={handleKeyPress}
             className="rounded-lg text-center font-bold bg-white shadow-md hover:shadow-lg transition-all duration-300"
             style={{
-              width: `${childBoxSize}px`,
-              height: `${childBoxSize}px`,
+              width: `${childBoxWidth}px`,
+              height: `${childBoxHeight}px`,
               fontSize: `${fontSize * FACTOR_TREE_CONSTANTS.CHILD_FONT_RATIO}px`,
               padding: `${padding * FACTOR_TREE_CONSTANTS.CHILD_PADDING_RATIO}px`,
               border: '1px solid black',
