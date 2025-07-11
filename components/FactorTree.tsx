@@ -4,13 +4,14 @@ import { isPrime, getFactorPair } from '../lib/factorUtils';
 import { generateTreeModel } from '../lib/generateTreeModel';
 
 // Define the TreeNode type with ONLY row/column positioning
-type TreeNode = {
+export type TreeNode = {
   id: string;
   value: number;
   isPrime: boolean;
   children: TreeNode[];
   row: number; // Tree level (0 = root)
   column: number; // Position within the level (0-based)
+  nodeState: 'input' | 'button' | 'number';
 };
 
 // Tree position model type
@@ -29,6 +30,7 @@ const generateFactorTree = (number: number): TreeNode => {
     children: [],
     row: 0,
     column: 0,
+    nodeState: 'button'
   };
 };
 
@@ -87,9 +89,40 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
     }
   }, [treePositionModel, newNodes.size]);
 
+  const handleFactorInput = (nodeId: string, factor: string) => {
+    // Validate and parse the factor input
+    const parsedFactor = parseInt(factor, 10);
+    if (isNaN(parsedFactor) || parsedFactor <= 0) {
+      console.error('Invalid factor input');
+      return;
+    }
 
+    // Find the node and update its value only if it has changed
+    setTreeData(prevData => {
+      const updateNode = (nodes: TreeNode[]): TreeNode[] => {
+        return nodes.map(node => {
+          if (node.id === nodeId) {
+            // Only update if the value has actually changed
+            if (node.value !== parsedFactor) {
+              return {
+                ...node,
+                value: parsedFactor,
+                isPrime: isPrime(parsedFactor),
+              };
+            }
+            return node; // Return unchanged node if value is the same
+          }
+          return {
+            ...node,
+            children: updateNode(node.children),
+          };
+        });
+      };
+      return updateNode(prevData);
+    });
+  }
 
-  const handleFactor = (nodeId: string, factor1: number, factor2: number) => {
+  const handleFactor = (nodeId: string) => {
     setTreeData(prevData => {
       if (!prevData) return [];
 
@@ -105,19 +138,22 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
             // Create child nodes
             const child1: TreeNode = {
               id: `${nodeId}-left`,
-              value: factor1,
-              isPrime: isPrime(factor1),
+              value: 0,
+              isPrime: false,
               children: [],
               row: childRow,
               column: leftChildColumn,
+              nodeState: 'input'
             };
             const child2: TreeNode = {
               id: `${nodeId}-right`,
-              value: factor2,
-              isPrime: isPrime(factor2),
+              value: 0,
+              isPrime: false,
               children: [],
               row: childRow,
               column: rightChildColumn,
+              nodeState: 'input'
+
             };
 
             // Update max level if needed
@@ -183,11 +219,7 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
           [nodeId]: { show: true, type: 'incorrect' }
         }));
       } else {
-        // Automatically create the factor tree for this node
-        const factors = getFactorPair(node.value);
-        if (factors) {
-          handleFactor(nodeId, factors[0], factors[1]);
-        }
+          handleFactor(nodeId);
       }
     }
 
@@ -242,13 +274,9 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
           }}
         >
           <FactorNode
-            value={node.value}
-            onIncorrectMove={() => handleNodeClick(node.id, false)}
-            onCorrectMove={() => handleNodeClick(node.id, true)}
-            onFactor={(f1, f2) => handleFactor(node.id, f1, f2)}
+            node={node}
+            handleFactorInput={handleFactorInput}
             onNodeClick={handleNodeClick}
-            nodeId={node.id}
-            isFullyFactored={node.isPrime}
             showFeedback={feedback.show}
             feedbackType={feedback.type}
             boxHeight={getBoxHeight(node.row)}
