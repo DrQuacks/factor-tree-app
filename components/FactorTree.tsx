@@ -108,6 +108,7 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
           if (node.id === nodeId) {
             // Only update if the value has actually changed
             if (node.value !== parsedFactor) {
+              console.log(`Updating child node ${nodeId} value from ${node.value} to ${parsedFactor}`);
               return {
                 ...node,
                 value: parsedFactor,
@@ -121,21 +122,58 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
           if (node.children.some(child => child.id === nodeId)) {
             const updatedChildValues = [...node.childValues] as [number, number];
             
-            // Determine if the updated node is left or right child
-            if (nodeId.endsWith('-left')) {
-              updatedChildValues[0] = parsedFactor;
-              console.log(`Updated parent ${node.id} childValues[0] to ${parsedFactor}`);
-            } else if (nodeId.endsWith('-right')) {
-              updatedChildValues[1] = parsedFactor;
-              console.log(`Updated parent ${node.id} childValues[1] to ${parsedFactor}`);
-            }
+            // Debug: Log current state before update
+            console.log(`Before update - Parent ${node.id} childValues: [${node.childValues[0]}, ${node.childValues[1]}]`);
+            console.log(`Before update - Child nodes: left=${node.children[0]?.value}, right=${node.children[1]?.value}`);
             
-            console.log(`Parent ${node.id} childValues now: [${updatedChildValues[0]}, ${updatedChildValues[1]}]`);
+            // Update the childValues based on the actual child node values
+            // First, update the child node that was just changed
+            const updatedChildren = node.children.map(child => {
+              if (child.id === nodeId) {
+                return {
+                  ...child,
+                  value: parsedFactor,
+                  isPrime: isPrime(parsedFactor),
+                };
+              }
+              return child;
+            });
+            
+            // Now update the childValues array based on the updated children
+            updatedChildValues[0] = updatedChildren[0]?.value || 0;
+            updatedChildValues[1] = updatedChildren[1]?.value || 0;
+            
+            console.log(`After updating children - Parent ${node.id} childValues: [${updatedChildValues[0]}, ${updatedChildValues[1]}]`);
+            
+            // Check if both child values are non-zero
+            if (updatedChildValues[0] !== 0 && updatedChildValues[1] !== 0) {
+              // Check if the two numbers multiply to the parent's value
+              if (updatedChildValues[0] * updatedChildValues[1] === node.value) {
+                console.log(`Valid factor pair found for ${node.id}: ${updatedChildValues[0]} × ${updatedChildValues[1]} = ${node.value}`);
+                
+                // Update parent node state to 'number'
+                // Update both children node states to 'button'
+                console.log(`Changing node states: parent ${node.id} → 'number', children → 'button'`);
+                return {
+                  ...node,
+                  childValues: updatedChildValues,
+                  nodeState: 'number',
+                  children: updatedChildren.map(child => ({
+                    ...child,
+                    nodeState: 'button'
+                  }))
+                };
+              } else {
+                console.log(`Invalid factor pair for ${node.id}: ${updatedChildValues[0]} × ${updatedChildValues[1]} ≠ ${node.value}`);
+              }
+            } else {
+              console.log(`Child values not complete for ${node.id}: [${updatedChildValues[0]}, ${updatedChildValues[1]}]`);
+            }
             
             return {
               ...node,
               childValues: updatedChildValues,
-              children: updateNode(node.children),
+              children: updatedChildren,
             };
           }
           
@@ -145,7 +183,23 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
           };
         });
       };
-      return updateNode(prevData);
+      
+      // Debug: Log the final state after the update
+      const finalResult = updateNode(prevData);
+      console.log('=== Final tree state after update ===');
+      const logTreeState = (nodes: TreeNode[], level = 0) => {
+        nodes.forEach(node => {
+          const indent = '  '.repeat(level);
+          console.log(`${indent}${node.id}: value=${node.value}, childValues=[${node.childValues[0]}, ${node.childValues[1]}], nodeState=${node.nodeState}`);
+          if (node.children.length > 0) {
+            logTreeState(node.children, level + 1);
+          }
+        });
+      };
+      logTreeState(finalResult);
+      console.log('=== End tree state ===');
+      
+      return finalResult;
     });
   }
 
