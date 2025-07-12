@@ -136,7 +136,7 @@ export default function FactorNode({
       </div>
     )
   }
-
+  console.log('node is: ',node)
   return (
       <NumberDiv/>
   );

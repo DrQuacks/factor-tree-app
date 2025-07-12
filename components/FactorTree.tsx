@@ -12,6 +12,8 @@ export type TreeNode = {
   row: number; // Tree level (0 = root)
   column: number; // Position within the level (0-based)
   nodeState: 'input' | 'button' | 'number';
+  parentId: string; // ID of the parent node, 'none' for root
+  childValues: [number, number]; // Values of left and right children, [0,0] initially
 };
 
 // Tree position model type
@@ -30,7 +32,9 @@ const generateFactorTree = (number: number): TreeNode => {
     children: [],
     row: 0,
     column: 0,
-    nodeState: 'button'
+    nodeState: 'button',
+    parentId: 'none',
+    childValues: [0, 0]
   };
 };
 
@@ -112,6 +116,29 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
             }
             return node; // Return unchanged node if value is the same
           }
+          
+          // Check if this node is the parent of the updated node
+          if (node.children.some(child => child.id === nodeId)) {
+            const updatedChildValues = [...node.childValues] as [number, number];
+            
+            // Determine if the updated node is left or right child
+            if (nodeId.endsWith('-left')) {
+              updatedChildValues[0] = parsedFactor;
+              console.log(`Updated parent ${node.id} childValues[0] to ${parsedFactor}`);
+            } else if (nodeId.endsWith('-right')) {
+              updatedChildValues[1] = parsedFactor;
+              console.log(`Updated parent ${node.id} childValues[1] to ${parsedFactor}`);
+            }
+            
+            console.log(`Parent ${node.id} childValues now: [${updatedChildValues[0]}, ${updatedChildValues[1]}]`);
+            
+            return {
+              ...node,
+              childValues: updatedChildValues,
+              children: updateNode(node.children),
+            };
+          }
+          
           return {
             ...node,
             children: updateNode(node.children),
@@ -143,7 +170,9 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
               children: [],
               row: childRow,
               column: leftChildColumn,
-              nodeState: 'input'
+              nodeState: 'input',
+              parentId: nodeId,
+              childValues: [0, 0]
             };
             const child2: TreeNode = {
               id: `${nodeId}-right`,
@@ -152,8 +181,9 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
               children: [],
               row: childRow,
               column: rightChildColumn,
-              nodeState: 'input'
-
+              nodeState: 'input',
+              parentId: nodeId,
+              childValues: [0, 0]
             };
 
             // Update max level if needed
@@ -164,6 +194,9 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
             // Track new nodes and lines for animation
             setNewNodes(prev => new Set(Array.from(prev).concat([child1.id, child2.id])));
             setNewLines(prev => new Set(Array.from(prev).concat([`${nodeId}-${child1.id}`, `${nodeId}-${child2.id}`])));
+
+            console.log(`Created children for ${nodeId}: left=${child1.id}, right=${child2.id}`);
+            console.log(`Parent ${nodeId} childValues initialized to [0, 0]`);
 
             return {
               ...node,
@@ -241,6 +274,23 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
   const getBoxWidth = (level: number) => {
     if (!treePositionModel) return 90; // Default width (aspect ratio 3:2)
     return treePositionModel.boxWidths[level] || 90;
+  };
+
+  // Helper function to log node's childValues for debugging
+  const logNodeChildValues = (nodeId: string) => {
+    const findNode = (nodes: TreeNode[], nodeId: string): TreeNode | null => {
+      for (const node of nodes) {
+        if (node.id === nodeId) return node;
+        const found = findNode(node.children, nodeId);
+        if (found) return found;
+      }
+      return null;
+    };
+
+    const node = findNode(treeData, nodeId);
+    if (node) {
+      console.log(`Node ${nodeId} childValues: [${node.childValues[0]}, ${node.childValues[1]}]`);
+    }
   };
 
   // Flatten tree to get all nodes for rendering
