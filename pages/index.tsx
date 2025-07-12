@@ -1,5 +1,5 @@
 import Head from 'next/head';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import FactorTree from '../components/FactorTree';
 import NavBar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -12,6 +12,8 @@ export default function Home() {
   const [hintText, setHintText] = useState('');
   const [showSolution, setShowSolution] = useState(false);
   const [gameComplete, setGameComplete] = useState(false);
+  const [showValidationFailed, setShowValidationFailed] = useState(false);
+  const factorTreeRef = useRef<{ handleFullyFactored: () => void } | null>(null);
 
   const handleIncorrectMove = () => {
     setIncorrectMoves(prev => prev + 1);
@@ -25,12 +27,9 @@ export default function Home() {
   };
 
   const handleFullyFactored = () => {
-    // Check if the current state represents a fully factored tree
-    // This is a simplified check - in a real implementation, you'd check the entire tree state
-    if (isPrime(currentNumber)) {
-      handleCorrectMove();
-    } else {
-      handleIncorrectMove();
+    // Call FactorTree's validation function
+    if (factorTreeRef.current) {
+      factorTreeRef.current.handleFullyFactored();
     }
   };
 
@@ -54,6 +53,10 @@ export default function Home() {
     }, 10000);
   };
 
+  const handleValidationFailed = () => {
+    setShowValidationFailed(true);
+  };
+
   const handleNewGame = () => {
     // Generate a new composite number for the game
     const compositeNumbers = [84, 100, 120, 150, 180, 200, 225, 250, 300];
@@ -63,6 +66,7 @@ export default function Home() {
     setShowHint(false);
     setShowSolution(false);
     setGameComplete(false);
+    setShowValidationFailed(false);
   };
 
   return (
@@ -84,6 +88,19 @@ export default function Home() {
           </div>
         </div>
       )}
+      {showValidationFailed && (
+        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 text-center">
+            <p className="text-xl font-semibold mb-4 text-red-600">❌ Keep Trying</p>
+            <button 
+              onClick={() => setShowValidationFailed(false)}
+              className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition-colors"
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      )}
       {/* Game Area - Takes up most of the screen */}
       <div className="flex-1 flex items-center justify-center p-8">
         <FactorTree
@@ -91,6 +108,9 @@ export default function Home() {
           onIncorrectMove={handleIncorrectMove}
           onCorrectMove={handleCorrectMove}
           showSolution={showSolution}
+          onFullyFactored={handleFullyFactored}
+          onValidationFailed={handleValidationFailed}
+          ref={factorTreeRef}
         />
       </div>
       <Footer 

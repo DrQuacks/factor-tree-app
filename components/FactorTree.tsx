@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import FactorNode from './FactorNode';
 import { isPrime, getFactorPair } from '../lib/factorUtils';
 import { generateTreeModel } from '../lib/generateTreeModel';
@@ -43,22 +43,31 @@ interface Props {
   onIncorrectMove: () => void;
   onCorrectMove: () => void;
   showSolution: boolean;
+  onFullyFactored: () => void;
+  onValidationFailed: () => void;
 }
 
-export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMove, showSolution }: Props) {
+export default forwardRef<{ handleFullyFactored: () => void }, Props>(function FactorTree({ initialNumber, onIncorrectMove, onCorrectMove, showSolution, onFullyFactored, onValidationFailed }, ref) {
   const [treeData, setTreeData] = useState<TreeNode[]>([]);
   const [feedbackStates, setFeedbackStates] = useState<Record<string, { show: boolean; type: 'correct' | 'incorrect' | null }>>({});
   const [treePositionModel, setTreePositionModel] = useState<TreePositionModel | null>(null);
   const [maxLevel, setMaxLevel] = useState(0);
   const [newNodes, setNewNodes] = useState<Set<string>>(new Set());
   const [newLines, setNewLines] = useState<Set<string>>(new Set());
+  const [leafNodes, setLeafNodes] = useState<string[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Expose handleFullyFactored to parent component
+  useImperativeHandle(ref, () => ({
+    handleFullyFactored
+  }));
 
   // Initialize tree with the starting number
   useEffect(() => {
     const rootNode: TreeNode = generateFactorTree(initialNumber);
     setTreeData([rootNode]);
     setMaxLevel(0);
+    setLeafNodes(['root']); // Root starts as a leaf node
   }, [initialNumber]);
 
   // Generate tree position model when max level changes
@@ -154,6 +163,10 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
                 // Update parent node state to 'number'
                 // Update both children node states to 'button'
                 console.log(`Changing node states: parent ${node.id} → 'number', children → 'button'`);
+                
+                // Remove parent from leafNodes since it now has children
+                setLeafNodes(prev => prev.filter(id => id !== node.id));
+                
                 return {
                   ...node,
                   childValues: updatedChildValues,
@@ -252,6 +265,12 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
             console.log(`Created children for ${nodeId}: left=${child1.id}, right=${child2.id}`);
             console.log(`Parent ${nodeId} childValues initialized to [0, 0]`);
 
+            // Update leafNodes: remove parent, add children
+            setLeafNodes(prev => {
+              const withoutParent = prev.filter(id => id !== nodeId);
+              return [...withoutParent, child1.id, child2.id];
+            });
+
             return {
               ...node,
               children: [child1, child2],
@@ -272,16 +291,7 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
   const handleNodeClick = (nodeId: string, isFullyFactored: boolean) => {
     if (!treeData) return;
 
-    const findNode = (nodes: TreeNode[], nodeId: string): TreeNode | null => {
-      for (const node of nodes) {
-        if (node.id === nodeId) return node;
-        const found = findNode(node.children, nodeId);
-        if (found) return found;
-      }
-      return null;
-    };
-
-    const node = findNode(treeData, nodeId);
+    const node = findNodeById(treeData, nodeId);
     if (!node) return;
 
     if (isFullyFactored) {
@@ -330,20 +340,46 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
     return treePositionModel.boxWidths[level] || 90;
   };
 
+  // Helper function to find a node by ID
+  const findNodeById = (nodes: TreeNode[], nodeId: string): TreeNode | null => {
+    for (const node of nodes) {
+      if (node.id === nodeId) return node;
+      const found = findNodeById(node.children, nodeId);
+      if (found) return found;
+    }
+    return null;
+  };
+
   // Helper function to log node's childValues for debugging
   const logNodeChildValues = (nodeId: string) => {
-    const findNode = (nodes: TreeNode[], nodeId: string): TreeNode | null => {
-      for (const node of nodes) {
-        if (node.id === nodeId) return node;
-        const found = findNode(node.children, nodeId);
-        if (found) return found;
-      }
-      return null;
-    };
-
-    const node = findNode(treeData, nodeId);
+    const node = findNodeById(treeData, nodeId);
     if (node) {
       console.log(`Node ${nodeId} childValues: [${node.childValues[0]}, ${node.childValues[1]}]`);
+    }
+  };
+
+  // Handle Fully Factored button click
+  const handleFullyFactored = () => {
+    console.log('Checking leaf nodes for prime validation:', leafNodes);
+    
+    // Check if all leaf nodes are prime
+    const allLeafNodesPrime = leafNodes.every(leafId => {
+      const node = findNodeById(treeData, leafId);
+      if (!node) {
+        console.log(`Warning: Leaf node ${leafId} not found in tree`);
+        return false;
+      }
+      console.log(`Leaf node ${leafId}: value=${node.value}, isPrime=${node.isPrime}`);
+      return node.isPrime;
+    });
+
+    if (allLeafNodesPrime) {
+      console.log('All leaf nodes are prime! Correct factorization.');
+      onCorrectMove();
+    } else {
+      console.log('Not all leaf nodes are prime. Incorrect factorization.');
+      onIncorrectMove();
+      onValidationFailed();
     }
   };
 
@@ -474,4 +510,4 @@ export default function FactorTree({ initialNumber, onIncorrectMove, onCorrectMo
   };
   
   return treeData ? renderTree(treeData) : null;
-}
+})
