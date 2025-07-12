@@ -103,11 +103,16 @@ export default forwardRef<{ handleFullyFactored: () => void }, Props>(function F
   }, [treePositionModel, newNodes.size]);
 
   const handleFactorInput = (nodeId: string, factor: string) => {
-    // Validate and parse the factor input
-    const parsedFactor = parseInt(factor, 10);
-    if (isNaN(parsedFactor) || parsedFactor <= 0) {
-      console.error('Invalid factor input');
-      return;
+    // Handle blank input as 0, otherwise validate and parse
+    let parsedFactor: number;
+    if (factor.trim() === '') {
+      parsedFactor = 0;
+    } else {
+      parsedFactor = parseInt(factor, 10);
+      if (isNaN(parsedFactor) || parsedFactor <= 0) {
+        console.error('Invalid factor input');
+        return;
+      }
     }
 
     // Find the node and update its value only if it has changed

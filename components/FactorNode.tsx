@@ -22,13 +22,13 @@ export default function FactorNode({
   boxWidth
 }: Props) {
   const [isAnimating, setIsAnimating] = useState(false);
-  const [inputValue, setInputValue] = useState(node.value.toString());
+  const [inputValue, setInputValue] = useState(node.value === 0 ? '' : node.value.toString());
 
   const { value, isPrime, id:nodeId, nodeState } = node;
 
   // Sync input value with node value when node changes
   useEffect(() => {
-    setInputValue(node.value.toString());
+    setInputValue(node.value === 0 ? '' : node.value.toString());
   }, [node.value]);
 
   const handleClick = () => {
@@ -75,7 +75,7 @@ export default function FactorNode({
         }}
         onClick={nodeState === 'button' ? handleClick : undefined}
       >
-        <span className="font-bold text-gray-800">{value}</span>
+        <span className="font-bold text-gray-800">{value === 0 ? '' : value}</span>
       </div>
     );
   };
@@ -83,8 +83,11 @@ export default function FactorNode({
   const InputNumber = () => {
     const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
       const newValue = e.target.value;
+      // Normalize values for comparison: blank input = 0
+      const normalizedNewValue = newValue.trim() === '' ? '0' : newValue;
+      const normalizedNodeValue = node.value.toString();
       // Only call handleFactorInput if the value actually changed
-      if (newValue !== node.value.toString()) {
+      if (normalizedNewValue !== normalizedNodeValue) {
         handleFactorInput(nodeId, newValue);
       }
     };
@@ -106,7 +109,6 @@ export default function FactorNode({
           border: '1px solid black',
           transform: isAnimating ? 'translateY(-20px)' : 'translateY(0)'
         }}
-        placeholder="?"
         autoFocus
       />
     );
