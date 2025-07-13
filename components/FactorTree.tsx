@@ -299,38 +299,62 @@ export default forwardRef<{ handleFullyFactored: () => void }, Props>(function F
     const node = findNodeById(treeData, nodeId);
     if (!node) return;
 
-    if (isFullyFactored) {
-      if (node.isPrime) {
-        onCorrectMove();
-        setFeedbackStates(prev => ({
-          ...prev,
-          [nodeId]: { show: true, type: 'correct' }
-        }));
-      } else {
-        onIncorrectMove();
-        setFeedbackStates(prev => ({
-          ...prev,
-          [nodeId]: { show: true, type: 'incorrect' }
-        }));
-      }
-    } else {
-      if (node.isPrime) {
-        onIncorrectMove();
-        setFeedbackStates(prev => ({
-          ...prev,
-          [nodeId]: { show: true, type: 'incorrect' }
-        }));
-      } else {
-          handleFactor(nodeId);
-      }
-    }
-
-    setTimeout(() => {
+    if (node.isPrime) {
+      // Clicking a prime node is always incorrect - user thinks it can be factored
+      onIncorrectMove();
+      
+      // Set up the animation sequence
       setFeedbackStates(prev => ({
         ...prev,
-        [nodeId]: { show: false, type: null }
+        [nodeId]: { show: true, type: 'incorrect' }
       }));
-    }, 2000);
+
+      // After animation completes, change nodeState to 'number' so it can't be clicked again
+      setTimeout(() => {
+        setTreeData(prevData => {
+          const updateNode = (nodes: TreeNode[]): TreeNode[] => {
+            return nodes.map(node => {
+              if (node.id === nodeId) {
+                return {
+                  ...node,
+                  nodeState: 'number'
+                };
+              }
+              return {
+                ...node,
+                children: updateNode(node.children),
+              };
+            });
+          };
+          return updateNode(prevData);
+        });
+        
+        setFeedbackStates(prev => ({
+          ...prev,
+          [nodeId]: { show: false, type: null }
+        }));
+      }, 2000);
+    } else {
+      // Non-prime node - can be factored
+      if (isFullyFactored) {
+        // User clicked "Fully Factored" but this node isn't prime - incorrect
+        onIncorrectMove();
+        setFeedbackStates(prev => ({
+          ...prev,
+          [nodeId]: { show: true, type: 'incorrect' }
+        }));
+      } else {
+        // Normal factoring
+        handleFactor(nodeId);
+      }
+
+      setTimeout(() => {
+        setFeedbackStates(prev => ({
+          ...prev,
+          [nodeId]: { show: false, type: null }
+        }));
+      }, 2000);
+    }
   };
 
   // Get box height from tree position model

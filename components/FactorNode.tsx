@@ -23,6 +23,7 @@ export default function FactorNode({
 }: Props) {
   const [isAnimating, setIsAnimating] = useState(false);
   const [inputValue, setInputValue] = useState(node.value === 0 ? '' : node.value.toString());
+  const [animationPhase, setAnimationPhase] = useState<'none' | 'fadeOut' | 'showX' | 'fadeIn'>('none');
 
   const { value, isPrime, id:nodeId, nodeState } = node;
 
@@ -30,6 +31,29 @@ export default function FactorNode({
   useEffect(() => {
     setInputValue(node.value === 0 ? '' : node.value.toString());
   }, [node.value]);
+
+  // Handle animation sequence for incorrect feedback
+  useEffect(() => {
+    if (showFeedback && feedbackType === 'incorrect') {
+      // Start animation sequence - fade out and draw X simultaneously
+      setAnimationPhase('fadeOut');
+      
+      // After fade out and X drawing, show X
+      setTimeout(() => {
+        setAnimationPhase('showX');
+      }, 300);
+      
+      // After showing X, fade back in and remove X simultaneously
+      setTimeout(() => {
+        setAnimationPhase('fadeIn');
+      }, 800);
+      
+      // Reset animation
+      setTimeout(() => {
+        setAnimationPhase('none');
+      }, 1100);
+    }
+  }, [showFeedback, feedbackType]);
 
   const handleClick = () => {
     // Call the parent's click handler instead of handling it internally
@@ -62,6 +86,18 @@ export default function FactorNode({
 
 
   const StaticNumber = () => {
+    const getOpacity = () => {
+      switch (animationPhase) {
+        case 'fadeOut':
+          return 0.5;
+        case 'showX':
+        case 'fadeIn':
+          return 0.5;
+        default:
+          return 1;
+      }
+    };
+
     return (
       <div
         className={`relative rounded-lg bg-white shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center ${nodeState === 'button' ? 'cursor-pointer' : 'cursor-default'}`}
@@ -71,7 +107,9 @@ export default function FactorNode({
           fontSize: `${fontSize}px`,
           padding: `${padding}px`,
           border: '1px solid black',
-          transform: isAnimating ? 'translateY(-20px)' : 'translateY(0)'
+          transform: isAnimating ? 'translateY(-20px)' : 'translateY(0)',
+          opacity: getOpacity(),
+          transition: 'opacity 0.3s ease-in-out'
         }}
         onClick={nodeState === 'button' ? handleClick : undefined}
       >
@@ -125,14 +163,90 @@ export default function FactorNode({
           )}
 
           {/* Feedback icons */}
-          {showFeedback && (
+          {showFeedback && feedbackType === 'correct' && (
             <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 rounded-lg">
-              {feedbackType === 'correct' && (
-                <span className="text-green-500 text-2xl">✓</span>
-              )}
-              {feedbackType === 'incorrect' && (
-                <span className="text-red-500 text-2xl">✗</span>
-              )}
+              <span className="text-green-500 text-2xl">✓</span>
+            </div>
+          )}
+          {animationPhase === 'fadeOut' && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <svg
+                width={boxWidth - padding * 2}
+                height={boxHeight - padding * 2}
+                style={{ animation: 'drawX 0.3s ease-in-out forwards' }}
+              >
+                <line
+                  x1="0"
+                  y1="0"
+                  x2={boxWidth - padding * 2}
+                  y2={boxHeight - padding * 2}
+                  stroke="red"
+                  strokeWidth="3"
+                  style={{ animation: 'drawLine 0.3s ease-in-out forwards' }}
+                />
+                <line
+                  x1={boxWidth - padding * 2}
+                  y1="0"
+                  x2="0"
+                  y2={boxHeight - padding * 2}
+                  stroke="red"
+                  strokeWidth="3"
+                  style={{ animation: 'drawLine 0.3s ease-in-out forwards' }}
+                />
+              </svg>
+            </div>
+          )}
+          {animationPhase === 'showX' && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <svg
+                width={boxWidth - padding * 2}
+                height={boxHeight - padding * 2}
+              >
+                <line
+                  x1="0"
+                  y1="0"
+                  x2={boxWidth - padding * 2}
+                  y2={boxHeight - padding * 2}
+                  stroke="red"
+                  strokeWidth="3"
+                />
+                <line
+                  x1={boxWidth - padding * 2}
+                  y1="0"
+                  x2="0"
+                  y2={boxHeight - padding * 2}
+                  stroke="red"
+                  strokeWidth="3"
+                />
+              </svg>
+            </div>
+          )}
+          {animationPhase === 'fadeIn' && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <svg
+                width={boxWidth - padding * 2}
+                height={boxHeight - padding * 2}
+                style={{ animation: 'removeX 0.3s ease-in-out forwards' }}
+              >
+                <line
+                  x1="0"
+                  y1="0"
+                  x2={boxWidth - padding * 2}
+                  y2={boxHeight - padding * 2}
+                  stroke="red"
+                  strokeWidth="3"
+                  style={{ animation: 'removeLine 0.3s ease-in-out forwards' }}
+                />
+                <line
+                  x1={boxWidth - padding * 2}
+                  y1="0"
+                  x2="0"
+                  y2={boxHeight - padding * 2}
+                  stroke="red"
+                  strokeWidth="3"
+                  style={{ animation: 'removeLine 0.3s ease-in-out forwards' }}
+                />
+              </svg>
             </div>
           )}
       </div>
