@@ -299,6 +299,25 @@ export default forwardRef<{ handleFullyFactored: () => void }, Props>(function F
     const node = findNodeById(treeData, nodeId);
     if (!node) return;
 
+    // Immediately change nodeState to 'number' to make it unclickable
+    setTreeData(prevData => {
+      const updateNode = (nodes: TreeNode[]): TreeNode[] => {
+        return nodes.map(node => {
+          if (node.id === nodeId) {
+            return {
+              ...node,
+              nodeState: 'number'
+            };
+          }
+          return {
+            ...node,
+            children: updateNode(node.children),
+          };
+        });
+      };
+      return updateNode(prevData);
+    });
+
     if (node.isPrime) {
       // Clicking a prime node is always incorrect - user thinks it can be factored
       onIncorrectMove();
@@ -309,26 +328,7 @@ export default forwardRef<{ handleFullyFactored: () => void }, Props>(function F
         [nodeId]: { show: true, type: 'incorrect' }
       }));
 
-      // After animation completes, change nodeState to 'number' so it can't be clicked again
       setTimeout(() => {
-        setTreeData(prevData => {
-          const updateNode = (nodes: TreeNode[]): TreeNode[] => {
-            return nodes.map(node => {
-              if (node.id === nodeId) {
-                return {
-                  ...node,
-                  nodeState: 'number'
-                };
-              }
-              return {
-                ...node,
-                children: updateNode(node.children),
-              };
-            });
-          };
-          return updateNode(prevData);
-        });
-        
         setFeedbackStates(prev => ({
           ...prev,
           [nodeId]: { show: false, type: null }
