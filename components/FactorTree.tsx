@@ -410,7 +410,8 @@ export default forwardRef<{ handleFullyFactored: () => void }, Props>(function F
     const allNodes: TreeNode[] = [];
     const traverse = (node: TreeNode) => {
       allNodes.push(node);
-      node.children.forEach(traverse);
+      // Reverse the children order so left child is rendered last and gets autoFocus
+      [...node.children].reverse().forEach(traverse);
     };
     nodes.forEach(traverse);
     return allNodes;

@@ -29,6 +29,11 @@ function FactorNode({
   const [inputValue, setInputValue] = useState(initialValue === 0 ? '' : initialValue.toString());  
   const [animationPhase, setAnimationPhase] = useState<'none' | 'fadeOut' | 'showX' | 'fadeIn'>('none');
 
+  // Sync inputValue with initialValue when it changes (e.g., new game)
+  useEffect(() => {
+    setInputValue(initialValue === 0 ? '' : initialValue.toString());
+  }, [initialValue]);
+
   // useEffect(() => {
   //   console.log('FactorNode re-rendered:', {
   //     nodeId,
