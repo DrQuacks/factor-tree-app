@@ -1,19 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { FACTOR_TREE_CONSTANTS } from '../lib/constants';
 import { TreeNode } from './FactorTree';
 
 interface Props {
-  node: TreeNode;
+  nodeId:string;
+  nodeState:"number" | "input" | "button";
+  initialValue:number;
   handleFactorInput: (nodeId: string, factor: string) => void;
-  onNodeClick: (nodeId: string, isFullyFactored: boolean) => void;
+  onNodeClick: (nodeId: string) => void;
   showFeedback: boolean;
   feedbackType: 'correct' | 'incorrect' | null;
   boxHeight: number;
   boxWidth: number;
 }
 
-export default function FactorNode({
-  node,
+function FactorNode({
+  nodeId,
+  nodeState,
+  initialValue,
   handleFactorInput,
   onNodeClick,
   showFeedback,
@@ -22,15 +26,20 @@ export default function FactorNode({
   boxWidth
 }: Props) {
   const [isAnimating, setIsAnimating] = useState(false);
-  const [inputValue, setInputValue] = useState(node.value === 0 ? '' : node.value.toString());
+  const [inputValue, setInputValue] = useState(initialValue === 0 ? '' : initialValue.toString());  
   const [animationPhase, setAnimationPhase] = useState<'none' | 'fadeOut' | 'showX' | 'fadeIn'>('none');
 
-  const { value, isPrime, id:nodeId, nodeState } = node;
-
-  // Sync input value with node value when node changes
-  useEffect(() => {
-    setInputValue(node.value === 0 ? '' : node.value.toString());
-  }, [node.value]);
+  // useEffect(() => {
+  //   console.log('FactorNode re-rendered:', {
+  //     nodeId,
+  //     nodeState,
+  //     initialValue,
+  //     showFeedback,
+  //     feedbackType,
+  //     boxHeight,
+  //     boxWidth,
+  //   });
+  // }, [nodeId, nodeState, initialValue, showFeedback, feedbackType, boxHeight, boxWidth]);
 
   // Handle animation sequence for incorrect feedback
   useEffect(() => {
@@ -57,7 +66,7 @@ export default function FactorNode({
 
   const handleClick = () => {
     // Call the parent's click handler instead of handling it internally
-    onNodeClick(nodeId, isPrime);
+    onNodeClick(nodeId);
   };
 
 
@@ -113,7 +122,9 @@ export default function FactorNode({
         }}
         onClick={nodeState === 'button' ? handleClick : undefined}
       >
-        <span className="font-bold text-gray-800">{value === 0 ? '' : value}</span>
+        {/* <span className="font-bold text-gray-800">{value === 0 ? '' : value}</span> */}
+        <span className="font-bold text-gray-800">{inputValue}</span>
+
       </div>
     );
   };
@@ -121,11 +132,14 @@ export default function FactorNode({
   const InputNumber = () => {
     const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
       const newValue = e.target.value;
-      // Normalize values for comparison: blank input = 0
-      const normalizedNewValue = newValue.trim() === '' ? '0' : newValue;
-      const normalizedNodeValue = node.value.toString();
-      // Only call handleFactorInput if the value actually changed
-      if (normalizedNewValue !== normalizedNodeValue) {
+      // // Normalize values for comparison: blank input = 0
+      // const normalizedNewValue = newValue.trim() === '' ? '0' : newValue;
+      // const normalizedNodeValue = node.value.toString();
+      // // Only call handleFactorInput if the value actually changed
+      // if (normalizedNewValue !== normalizedNodeValue) {
+      //   handleFactorInput(nodeId, newValue);
+      // }
+      if (newValue.trim() !== '') {
         handleFactorInput(nodeId, newValue);
       }
     };
@@ -252,8 +266,18 @@ export default function FactorNode({
       </div>
     )
   }
-  console.log('node is: ',node)
+  console.log('nodeId is: ',nodeId)
   return (
       <NumberDiv/>
   );
 }
+
+export default memo(FactorNode, (prevProps, nextProps) => {
+  return (
+    prevProps.nodeId === nextProps.nodeId &&
+    prevProps.nodeState === nextProps.nodeState &&
+    prevProps.initialValue === nextProps.initialValue &&
+    prevProps.boxHeight === nextProps.boxHeight &&
+    prevProps.boxWidth === nextProps.boxWidth
+  );
+});

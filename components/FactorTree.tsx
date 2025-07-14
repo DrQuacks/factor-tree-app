@@ -7,6 +7,7 @@ import { generateTreeModel } from '../lib/generateTreeModel';
 export type TreeNode = {
   id: string;
   value: number;
+  initialValue: number;
   isPrime: boolean;
   children: TreeNode[];
   row: number; // Tree level (0 = root)
@@ -28,6 +29,7 @@ const generateFactorTree = (number: number): TreeNode => {
   return {
     id: 'root',
     value: number,
+    initialValue: number,
     isPrime: isPrime(number),
     children: [],
     row: 0,
@@ -238,6 +240,7 @@ export default forwardRef<{ handleFullyFactored: () => void }, Props>(function F
             const child1: TreeNode = {
               id: `${nodeId}-left`,
               value: 0,
+              initialValue: 0,
               isPrime: false,
               children: [],
               row: childRow,
@@ -249,6 +252,7 @@ export default forwardRef<{ handleFullyFactored: () => void }, Props>(function F
             const child2: TreeNode = {
               id: `${nodeId}-right`,
               value: 0,
+              initialValue: 0,
               isPrime: false,
               children: [],
               row: childRow,
@@ -293,7 +297,7 @@ export default forwardRef<{ handleFullyFactored: () => void }, Props>(function F
     });
   };
 
-  const handleNodeClick = (nodeId: string, isFullyFactored: boolean) => {
+  const handleNodeClick = (nodeId: string) => {
     if (!treeData) return;
 
     const node = findNodeById(treeData, nodeId);
@@ -335,19 +339,8 @@ export default forwardRef<{ handleFullyFactored: () => void }, Props>(function F
         }));
       }, 2000);
     } else {
-      // Non-prime node - can be factored
-      if (isFullyFactored) {
-        // User clicked "Fully Factored" but this node isn't prime - incorrect
-        onIncorrectMove();
-        setFeedbackStates(prev => ({
-          ...prev,
-          [nodeId]: { show: true, type: 'incorrect' }
-        }));
-      } else {
-        // Normal factoring
-        handleFactor(nodeId);
-      }
-
+      // Normal factoring
+      handleFactor(nodeId);
       setTimeout(() => {
         setFeedbackStates(prev => ({
           ...prev,
@@ -443,7 +436,9 @@ export default forwardRef<{ handleFullyFactored: () => void }, Props>(function F
           }}
         >
           <FactorNode
-            node={node}
+            nodeId={node.id}
+            nodeState={node.nodeState}
+            initialValue={node.initialValue}
             handleFactorInput={handleFactorInput}
             onNodeClick={handleNodeClick}
             showFeedback={feedback.show}
