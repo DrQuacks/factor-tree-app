@@ -72,7 +72,7 @@ export default forwardRef<{ handleFullyFactored: () => void }, Props>(function F
     setLeafNodes(['root']); // Root starts as a leaf node
   }, [initialNumber]);
 
-  // Generate tree position model when max level changes
+  // Generate tree position model when max level changes or container resizes
   useEffect(() => {
     if (containerRef.current && maxLevel >= 0) {
       const rect = containerRef.current.getBoundingClientRect();
@@ -86,6 +86,32 @@ export default forwardRef<{ handleFullyFactored: () => void }, Props>(function F
         setTreePositionModel(newModel);
       }
     }
+  }, [maxLevel]);
+
+  // Add resize observer to detect container size changes
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      if (containerRef.current && maxLevel >= 0) {
+        const rect = containerRef.current.getBoundingClientRect();
+        
+        if (rect.width > 0 && rect.height > 0) {
+          const newModel = generateTreeModel({
+            viewHeight: rect.height,
+            viewWidth: rect.width,
+            totalLevels: maxLevel + 1
+          });
+          setTreePositionModel(newModel);
+        }
+      }
+    });
+
+    resizeObserver.observe(containerRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
   }, [maxLevel]);
 
   // Clear new nodes and show lines after animation completes
