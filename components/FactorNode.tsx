@@ -1,6 +1,5 @@
 import React, { useState, useEffect, memo } from 'react';
 import { FACTOR_TREE_CONSTANTS } from '../lib/constants';
-import { TreeNode } from './FactorTree';
 
 interface Props {
   nodeId:string;
@@ -85,18 +84,6 @@ function FactorNode({
     boxHeight * 0.1 // Padding as 10% of box height
   );
   
-  // Calculate child box dimensions and spacing
-  const childBoxHeight = boxHeight * FACTOR_TREE_CONSTANTS.CHILD_BOX_RATIO;
-  const childBoxWidth = boxWidth * FACTOR_TREE_CONSTANTS.CHILD_BOX_RATIO;
-  const verticalGap = boxHeight * FACTOR_TREE_CONSTANTS.VERTICAL_GAP_RATIO;
-  const horizontalGap = boxWidth * FACTOR_TREE_CONSTANTS.HORIZONTAL_GAP_RATIO;
-  
-  // Calculate SVG dimensions and line positions
-  const svgWidth = horizontalGap + childBoxWidth; // Full width: gap + child box width
-  const svgHeight = verticalGap; // Just the spacing between parent and children
-  const parentCenterX = svgWidth / 2;
-  const leftChildCenterX = childBoxWidth / 2; // Center of left child (half box width from left)
-  const rightChildCenterX = horizontalGap + childBoxWidth / 2; // Center of right child
 
 
   const StaticNumber = () => {

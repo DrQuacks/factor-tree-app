@@ -1,6 +1,7 @@
-const GAP_PERCENT = 0.1;
-const CHILD_RATIO = 0.8;
-const ASPECT_RATIO = 3 / 2;
+
+import {FACTOR_TREE_CONSTANTS} from './constants'
+
+const {CHILD_BOX_RATIO,GAP_PERCENT,ASPECT_RATIO,MIN_ASPECT_RATIO} = FACTOR_TREE_CONSTANTS
 
 const generateTreeModel = (
     {
@@ -20,18 +21,28 @@ const generateTreeModel = (
     const availableHeight = Math.floor(Math.tanh(totalLevels / 2) * viewHeight);
     const topPadding = Math.floor((viewHeight - availableHeight) / 2);
 
-    const rootHeight = availableHeight * (1 - CHILD_RATIO) / (1 - (CHILD_RATIO ** totalLevels));
+    const rootHeight = availableHeight * (1 - CHILD_BOX_RATIO) / (1 - (CHILD_BOX_RATIO ** totalLevels));
 
     let heights: number[] = [];
     for (let i = 0; i < totalLevels; i++) {
-        heights = [...heights, (rootHeight * (CHILD_RATIO ** i))];
+        heights = [...heights, (rootHeight * (CHILD_BOX_RATIO ** i))];
     }
 
-    const boxHeights = heights.map(h => h * (1 - 2 * GAP_PERCENT));
-    const boxWidths = boxHeights.map(h => h * ASPECT_RATIO);
+    let boxHeights = heights.map(h => h * (1 - 2 * GAP_PERCENT));
+    let boxWidths = boxHeights.map(h => h * ASPECT_RATIO);
 
     // Calculate the space the last row of the tree would take up if all leaf slots are filled
     const totalBottomWidth = (boxWidths[totalLevels - 1] * (1 + 2 * GAP_PERCENT)) * (2 ** (totalLevels - 1));
+
+    if (totalBottomWidth > (viewWidth * 0.95)) {
+        console.log('total bottom width: ',totalBottomWidth,'. viewWidth: ',viewWidth)
+        const scale = viewWidth / totalBottomWidth
+        boxWidths = boxWidths.map(w => w * scale * 0.95)
+        if (scale < (MIN_ASPECT_RATIO/ASPECT_RATIO)) {
+            // boxHeights = boxHeights.map(h => h * scale * 0.95)
+            boxHeights = boxWidths.map(w => w / MIN_ASPECT_RATIO)
+        }
+    }
 
     const positions: { x: number, y: number }[][] = [];
 

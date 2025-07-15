@@ -9,10 +9,14 @@ export const FACTOR_TREE_CONSTANTS = {
   CHILD_BOX_RATIO: 0.8, // Child boxes are 80% of parent
   CHILD_FONT_RATIO: 0.8, // Child font is 80% of parent
   CHILD_PADDING_RATIO: 0.8, // Child padding is 80% of parent
+  ASPECT_RATIO: 3 / 2,
+  MIN_ASPECT_RATIO: 5 / 6,
   
   // Spacing ratios (as percentage of parent box size)
-  VERTICAL_GAP_RATIO: 0.25, // 25% of parent size
-  HORIZONTAL_GAP_RATIO: 0.5, // 50% of parent size
+  GAP_PERCENT: 0.1,
+
+  // Screen resizing
+  PERCENT_OF_SCREEN: 0.95,
   
   // Minimum sizes
   MIN_BOX_SIZE: 40,
