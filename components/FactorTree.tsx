@@ -92,24 +92,33 @@ export default forwardRef<{ handleFullyFactored: () => void }, Props>(function F
   useEffect(() => {
     if (!containerRef.current) return;
 
+    let resizeTimeout: NodeJS.Timeout;
+
     const resizeObserver = new ResizeObserver(() => {
-      if (containerRef.current && maxLevel >= 0) {
-        const rect = containerRef.current.getBoundingClientRect();
-        
-        if (rect.width > 0 && rect.height > 0) {
-          const newModel = generateTreeModel({
-            viewHeight: rect.height,
-            viewWidth: rect.width,
-            totalLevels: maxLevel + 1
-          });
-          setTreePositionModel(newModel);
+      // Clear any pending resize updates
+      clearTimeout(resizeTimeout);
+      
+      // Debounce the resize update to prevent multiple rapid recalculations
+      resizeTimeout = setTimeout(() => {
+        if (containerRef.current && maxLevel >= 0) {
+          const rect = containerRef.current.getBoundingClientRect();
+          
+          if (rect.width > 0 && rect.height > 0) {
+            const newModel = generateTreeModel({
+              viewHeight: rect.height,
+              viewWidth: rect.width,
+              totalLevels: maxLevel + 1
+            });
+            setTreePositionModel(newModel);
+          }
         }
-      }
+      }, 100); // 100ms debounce
     });
 
     resizeObserver.observe(containerRef.current);
 
     return () => {
+      clearTimeout(resizeTimeout);
       resizeObserver.disconnect();
     };
   }, [maxLevel]);
@@ -528,26 +537,32 @@ export default forwardRef<{ handleFullyFactored: () => void }, Props>(function F
                   const lineLength = Math.sqrt(dx * dx + dy * dy);
 
                   return (
-                    <line
+                    <g
                       key={lineKey}
-                      x1={parentCenterX}
-                      y1={parentCenterY}
-                      x2={childCenterX}
-                      y2={childCenterY}
-                      stroke="black"
-                      strokeWidth="1"
                       style={{
-                        transition: `x1 0.6s cubic-bezier(0.4, 0, 0.2, 1), y1 0.6s cubic-bezier(0.4, 0, 0.2, 1), x2 0.6s cubic-bezier(0.4, 0, 0.2, 1), y2 0.6s cubic-bezier(0.4, 0, 0.2, 1)` + (isNewLine ? '' : ', opacity 0.3s ease-in-out'),
-                        opacity: 1,
-                        ...(isNewLine
-                          ? {
-                              strokeDasharray: lineLength,
-                              strokeDashoffset: lineLength,
-                              animation: `drawLine 0.4s cubic-bezier(0.4,0,0.2,1) 0.6s forwards`,
-                            }
-                          : {}),
+                        transform: `translate(${parentCenterX}px, ${parentCenterY}px)`,
+                        transition: `transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)`,
                       }}
-                    />
+                    >
+                      <line
+                        x1={0}
+                        y1={0}
+                        x2={dx}
+                        y2={dy}
+                        stroke="black"
+                        strokeWidth="1"
+                        style={{
+                          opacity: 1,
+                          ...(isNewLine
+                            ? {
+                                strokeDasharray: lineLength,
+                                strokeDashoffset: lineLength,
+                                animation: `drawLine 0.4s cubic-bezier(0.4,0,0.2,1) 0.6s forwards`,
+                              }
+                            : {}),
+                        }}
+                      />
+                    </g>
                   );
                 })
               )}
