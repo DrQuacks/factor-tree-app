@@ -11,6 +11,9 @@ interface Props {
   feedbackType: 'correct' | 'incorrect' | null;
   boxHeight: number;
   boxWidth: number;
+  onTabNext: (currentNodeId: string) => void;
+  onTabPrevious: (currentNodeId: string) => void;
+  registerInputRef: (nodeId: string, inputElement: HTMLInputElement | null) => void;
 }
 
 function FactorNode({
@@ -22,7 +25,10 @@ function FactorNode({
   showFeedback,
   feedbackType,
   boxHeight,
-  boxWidth
+  boxWidth,
+  onTabNext,
+  onTabPrevious,
+  registerInputRef
 }: Props) {
   const [isAnimating, setIsAnimating] = useState(false);
   const [inputValue, setInputValue] = useState(initialValue === 0 ? '' : initialValue.toString());  
@@ -136,14 +142,28 @@ function FactorNode({
       }
     };
 
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          onTabPrevious(nodeId);
+        } else {
+          onTabNext(nodeId);
+        }
+      }
+    };
+
     return (
       <input
+        ref={(el) => registerInputRef(nodeId, el)}
         type="text"
         inputMode="numeric"
         pattern="[0-9]*"
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+        data-node-id={nodeId}
         className="relative cursor-text rounded-lg bg-white shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center text-center"
         style={{
           width: `${boxWidth}px`,

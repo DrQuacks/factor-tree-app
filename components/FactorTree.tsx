@@ -57,6 +57,9 @@ export default forwardRef<{ handleFullyFactored: () => void }, Props>(function F
   const [newNodes, setNewNodes] = useState<Set<string>>(new Set());
   const [newLines, setNewLines] = useState<Set<string>>(new Set());
   const [leafNodes, setLeafNodes] = useState<string[]>([]);
+  const [inputNodeIds, setInputNodeIds] = useState<string[]>([]);
+  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const inputNodeIdsRef = useRef<string[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Expose handleFullyFactored to parent component
@@ -122,6 +125,41 @@ export default forwardRef<{ handleFullyFactored: () => void }, Props>(function F
       resizeObserver.disconnect();
     };
   }, [maxLevel]);
+
+  // Update input node IDs when tree data changes
+  useEffect(() => {
+    const getInputNodes = (nodes: TreeNode[]): string[] => {
+      const inputNodes: { id: string; row: number; column: number }[] = [];
+      
+      const traverse = (node: TreeNode) => {
+        if (node.nodeState === 'input') {
+          inputNodes.push({
+            id: node.id,
+            row: node.row,
+            column: node.column
+          });
+        }
+        node.children.forEach(traverse);
+      };
+      nodes.forEach(traverse);
+      
+      // Sort input nodes by row (top to bottom) and then by column (left to right)
+      // This creates a predictable tab order: top-left → top-right → bottom-left → bottom-right
+      inputNodes.sort((a, b) => {
+        if (a.row !== b.row) {
+          return a.row - b.row; // Top to bottom
+        }
+        return a.column - b.column; // Left to right within each row
+      });
+      
+      const result = inputNodes.map(node => node.id);
+      return result;
+    };
+    
+    const newInputNodeIds = getInputNodes(treeData);
+    setInputNodeIds(newInputNodeIds);
+    inputNodeIdsRef.current = newInputNodeIds;
+  }, [treeData]);
 
   // Clear new nodes and show lines after animation completes
   useEffect(() => {
@@ -407,6 +445,44 @@ export default forwardRef<{ handleFullyFactored: () => void }, Props>(function F
     return null;
   };
 
+  // Focus management functions for tab navigation
+  const focusNextInput = (currentNodeId: string) => {
+    const currentIndex = inputNodeIdsRef.current.indexOf(currentNodeId);
+    if (currentIndex === -1 || inputNodeIdsRef.current.length === 0) {
+      return;
+    }
+    
+    const nextIndex = (currentIndex + 1) % inputNodeIdsRef.current.length;
+    const nextNodeId = inputNodeIdsRef.current[nextIndex];
+    
+    // Focus the next input element using ref
+    const nextInput = inputRefs.current[nextNodeId];
+    if (nextInput) {
+      nextInput.focus();
+    }
+  };
+
+  const focusPreviousInput = (currentNodeId: string) => {
+    const currentIndex = inputNodeIdsRef.current.indexOf(currentNodeId);
+    if (currentIndex === -1 || inputNodeIdsRef.current.length === 0) {
+      return;
+    }
+    
+    const prevIndex = currentIndex === 0 ? inputNodeIdsRef.current.length - 1 : currentIndex - 1;
+    const prevNodeId = inputNodeIdsRef.current[prevIndex];
+    
+    // Focus the previous input element using ref
+    const prevInput = inputRefs.current[prevNodeId];
+    if (prevInput) {
+      prevInput.focus();
+    }
+  };
+
+  // Function to register input refs
+  const registerInputRef = (nodeId: string, inputElement: HTMLInputElement | null) => {
+    inputRefs.current[nodeId] = inputElement;
+  };
+
   // Helper function to log node's childValues for debugging
   const logNodeChildValues = (nodeId: string) => {
     const node = findNodeById(treeData, nodeId);
@@ -481,6 +557,9 @@ export default forwardRef<{ handleFullyFactored: () => void }, Props>(function F
             feedbackType={feedback.type}
             boxHeight={getBoxHeight(node.row)}
             boxWidth={getBoxWidth(node.row)}
+            onTabNext={focusNextInput}
+            onTabPrevious={focusPreviousInput}
+            registerInputRef={registerInputRef}
           />
         </div>
       </div>
@@ -498,10 +577,10 @@ export default forwardRef<{ handleFullyFactored: () => void }, Props>(function F
       >
         <div className="relative w-full h-full">
           {/* Vertical center line for debugging */}
-          <div 
+          {/* <div 
             className="absolute top-0 bottom-0 w-px bg-red-500 z-10"
             style={{ left: '50%', transform: 'translateX(-50%)' }}
-          />
+          /> */}
           
           {/* Render all connecting lines */}
           {treePositionModel && (
