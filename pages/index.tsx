@@ -2,7 +2,6 @@ import Head from 'next/head';
 import { useState, useEffect, useRef } from 'react';
 import FactorTree from '../components/FactorTree';
 import NavBar from '../components/Navbar';
-import Footer from '../components/Footer';
 import { generateFactorTree, getNextHint, isPrime } from '../lib/factorUtils';
 
 export default function Home() {
@@ -69,12 +68,24 @@ export default function Home() {
     setShowValidationFailed(false);
   };
 
+  const handleLoginSignUp = () => {
+    // Placeholder for login/signup functionality
+    console.log('Login/Sign Up clicked');
+  };
+
   return (
-    <div className="h-screen bg-gray-50 flex flex-col">
+    <div className="h-screen flex flex-col" style={{ backgroundColor: '#FCF9F2' }}>
       <Head>
         <title>Prime Factor Tree</title>
       </Head>
-      <NavBar/>
+      <NavBar
+        onNewNumber={handleNewGame}
+        onHint={handleHint}
+        onSolution={handleSolution}
+        onLoginSignUp={handleLoginSignUp}
+        onFullyFactored={handleFullyFactored}
+        incorrectMoves={incorrectMoves}
+      />
       {gameComplete && (
         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 text-center">
@@ -113,13 +124,7 @@ export default function Home() {
           ref={factorTreeRef}
         />
       </div>
-      <Footer 
-        handleHint={handleHint} 
-        handleSolution={handleSolution} 
-        handleFullyFactored={handleFullyFactored} 
-        incorrectMoves={incorrectMoves} 
-        handleNewGame={handleNewGame}
-      />
+
     </div>
   );
 }
