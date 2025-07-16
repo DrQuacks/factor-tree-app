@@ -34,7 +34,12 @@ input[type="number"] {
 }
 
 @keyframes drawLine {
+  from {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+  }
   to {
+    stroke-dasharray: 1000;
     stroke-dashoffset: 0;
   }
 }
@@ -76,17 +81,6 @@ input[type="number"] {
   }
   100% {
     opacity: 0;
-  }
-}
-
-@keyframes drawLine {
-  from {
-    stroke-dasharray: 1000;
-    stroke-dashoffset: 1000;
-  }
-  to {
-    stroke-dasharray: 1000;
-    stroke-dashoffset: 0;
   }
 }
 

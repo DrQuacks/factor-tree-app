@@ -5,6 +5,7 @@ interface Props {
   nodeId:string;
   nodeState:"number" | "input" | "button";
   initialValue:number;
+  shouldReset: boolean;
   handleFactorInput: (nodeId: string, factor: string) => void;
   onNodeClick: (nodeId: string) => void;
   showFeedback: boolean;
@@ -20,6 +21,7 @@ function FactorNode({
   nodeId,
   nodeState,
   initialValue,
+  shouldReset,
   handleFactorInput,
   onNodeClick,
   showFeedback,
@@ -34,22 +36,14 @@ function FactorNode({
   const [inputValue, setInputValue] = useState(initialValue === 0 ? '' : initialValue.toString());  
   const [animationPhase, setAnimationPhase] = useState<'none' | 'fadeOut' | 'showX' | 'fadeIn'>('none');
 
-  // Sync inputValue with initialValue when it changes (e.g., new game)
+  // Sync inputValue with initialValue when it changes (e.g., new game) or when shouldReset is true
   useEffect(() => {
-    setInputValue(initialValue === 0 ? '' : initialValue.toString());
-  }, [initialValue]);
+    if (shouldReset) {
+      setInputValue(initialValue === 0 ? '' : initialValue.toString());
+    }
+  }, [initialValue, shouldReset, nodeId]);
 
-  // useEffect(() => {
-  //   console.log('FactorNode re-rendered:', {
-  //     nodeId,
-  //     nodeState,
-  //     initialValue,
-  //     showFeedback,
-  //     feedbackType,
-  //     boxHeight,
-  //     boxWidth,
-  //   });
-  // }, [nodeId, nodeState, initialValue, showFeedback, feedbackType, boxHeight, boxWidth]);
+
 
   // Handle animation sequence for incorrect feedback
   useEffect(() => {
@@ -72,7 +66,7 @@ function FactorNode({
         setAnimationPhase('none');
       }, 1100);
     }
-  }, [showFeedback, feedbackType]);
+  }, [showFeedback, feedbackType, nodeId]);
 
   const handleClick = () => {
     // Call the parent's click handler instead of handling it internally
@@ -130,14 +124,8 @@ function FactorNode({
   const InputNumber = () => {
     const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
       const newValue = e.target.value;
-      // // Normalize values for comparison: blank input = 0
-      // const normalizedNewValue = newValue.trim() === '' ? '0' : newValue;
-      // const normalizedNodeValue = node.value.toString();
-      // // Only call handleFactorInput if the value actually changed
-      // if (normalizedNewValue !== normalizedNodeValue) {
-      //   handleFactorInput(nodeId, newValue);
-      // }
-      if (newValue.trim() !== '') {
+      // Only call handleFactorInput if the value is not empty and not 0
+      if (newValue.trim() !== '' && newValue !== '0') {
         handleFactorInput(nodeId, newValue);
       }
     };
@@ -150,6 +138,18 @@ function FactorNode({
         } else {
           onTabNext(nodeId);
         }
+      }
+    };
+
+    const getOpacity = () => {
+      switch (animationPhase) {
+        case 'fadeOut':
+          return 0.5;
+        case 'showX':
+        case 'fadeIn':
+          return 0.5;
+        default:
+          return 1;
       }
     };
 
@@ -171,7 +171,9 @@ function FactorNode({
           fontSize: `${fontSize}px`,
           padding: `${padding}px`,
           border: '1px solid black',
-          transform: isAnimating ? 'translateY(-20px)' : 'translateY(0)'
+          transform: isAnimating ? 'translateY(-20px)' : 'translateY(0)',
+          opacity: getOpacity(),
+          transition: 'opacity 0.3s ease-in-out'
         }}
         autoFocus
       />
@@ -278,7 +280,7 @@ function FactorNode({
       </div>
     )
   }
-  console.log('nodeId is: ',nodeId)
+
   return (
       <NumberDiv/>
   );
@@ -289,6 +291,9 @@ export default memo(FactorNode, (prevProps, nextProps) => {
     prevProps.nodeId === nextProps.nodeId &&
     prevProps.nodeState === nextProps.nodeState &&
     prevProps.initialValue === nextProps.initialValue &&
+    prevProps.shouldReset === nextProps.shouldReset &&
+    prevProps.showFeedback === nextProps.showFeedback &&
+    prevProps.feedbackType === nextProps.feedbackType &&
     prevProps.boxHeight === nextProps.boxHeight &&
     prevProps.boxWidth === nextProps.boxWidth
   );

@@ -57,9 +57,13 @@ export default forwardRef<{ handleFullyFactored: () => void }, Props>(function F
   const [newNodes, setNewNodes] = useState<Set<string>>(new Set());
   const [newLines, setNewLines] = useState<Set<string>>(new Set());
   const [leafNodes, setLeafNodes] = useState<string[]>([]);
+  const [hasIncorrectMove, setHasIncorrectMove] = useState(false);
   const [inputNodeIds, setInputNodeIds] = useState<string[]>([]);
+  const [shouldResetNodes, setShouldResetNodes] = useState<Set<string>>(new Set());
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const inputNodeIdsRef = useRef<string[]>([]);
+  const isResettingRef = useRef(false);
+  const processedFactorPairs = useRef<Set<string>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Expose handleFullyFactored to parent component
@@ -73,6 +77,7 @@ export default forwardRef<{ handleFullyFactored: () => void }, Props>(function F
     setTreeData([rootNode]);
     setMaxLevel(0);
     setLeafNodes(['root']); // Root starts as a leaf node
+    setShouldResetNodes(new Set(['root'])); // Reset root node for new game
   }, [initialNumber]);
 
   // Generate tree position model when max level changes or container resizes
@@ -178,6 +183,19 @@ export default forwardRef<{ handleFullyFactored: () => void }, Props>(function F
   }, [treePositionModel, newNodes.size]);
 
   const handleFactorInput = (nodeId: string, factor: string) => {
+    // Skip validation if we're in the middle of a reset
+    if (isResettingRef.current) {
+      console.log(`Skipping validation for ${nodeId} - reset in progress`);
+      return;
+    }
+    
+    // Set shouldReset to false for this node since it's inputting a number
+    setShouldResetNodes(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(nodeId);
+      return newSet;
+    });
+    
     // Handle blank input as 0, otherwise validate and parse
     let parsedFactor: number;
     if (factor.trim() === '') {
@@ -234,8 +252,21 @@ export default forwardRef<{ handleFullyFactored: () => void }, Props>(function F
             
             console.log(`After updating children - Parent ${node.id} childValues: [${updatedChildValues[0]}, ${updatedChildValues[1]}]`);
             
-            // Check if both child values are non-zero
-            if (updatedChildValues[0] !== 0 && updatedChildValues[1] !== 0) {
+            // Check if both child values are non-zero and we're not in a reset
+            if (updatedChildValues[0] !== 0 && updatedChildValues[1] !== 0 && !isResettingRef.current) {
+              // Create a key for this factor pair
+              const factorPairKey = `${node.id}-${updatedChildValues[0]}-${updatedChildValues[1]}`;
+              
+              // Check if we've already processed this factor pair
+              if (processedFactorPairs.current.has(factorPairKey)) {
+                console.log(`Already processed factor pair: ${factorPairKey}`);
+                return {
+                  ...node,
+                  childValues: updatedChildValues,
+                  children: updatedChildren,
+                };
+              }
+              
               // Check if the two numbers multiply to the parent's value
               if (updatedChildValues[0] * updatedChildValues[1] === node.value) {
                 console.log(`Valid factor pair found for ${node.id}: ${updatedChildValues[0]} × ${updatedChildValues[1]} = ${node.value}`);
@@ -258,6 +289,81 @@ export default forwardRef<{ handleFullyFactored: () => void }, Props>(function F
                 };
               } else {
                 console.log(`Invalid factor pair for ${node.id}: ${updatedChildValues[0]} × ${updatedChildValues[1]} ≠ ${node.value}`);
+                
+                // Mark this factor pair as processed
+                processedFactorPairs.current.add(factorPairKey);
+                
+                // Set shouldReset to true for both children
+                setShouldResetNodes(prev => {
+                  const newSet = new Set(prev);
+                  newSet.add(updatedChildren[0].id);
+                  newSet.add(updatedChildren[1].id);
+                  return newSet;
+                });
+                
+                // Show incorrect feedback on both child nodes
+                setFeedbackStates(prev => ({
+                  ...prev,
+                  [updatedChildren[0].id]: { show: true, type: 'incorrect' },
+                  [updatedChildren[1].id]: { show: true, type: 'incorrect' }
+                }));
+                
+                // Call the incorrect move handler only once per factor pair
+                if (!hasIncorrectMove) {
+                  setHasIncorrectMove(true);
+                  setTimeout(() => {
+                    onIncorrectMove();
+                  }, 0);
+                }
+                
+                // Reset both child values to 0 after the animation completes
+                setTimeout(() => {
+                  console.log('Starting reset process...');
+                  isResettingRef.current = true;
+                  
+                  // Immediately reset the tree data
+                  setTreeData(currentData => {
+                    const resetNode = (nodes: TreeNode[]): TreeNode[] => {
+                      return nodes.map(n => {
+                        if (n.id === node.id) {
+                          console.log(`Resetting parent node ${n.id}`);
+                          return {
+                            ...n,
+                            childValues: [0, 0],
+                            children: n.children.map(child => {
+                              console.log(`Resetting child ${child.id} to 0`);
+                              return {
+                                ...child,
+                                value: 0,
+                                initialValue: 0
+                              };
+                            })
+                          };
+                        }
+                        return {
+                          ...n,
+                          children: resetNode(n.children),
+                        };
+                      });
+                    };
+                    const result = resetNode(currentData);
+                    console.log('Reset complete, new tree state:', result);
+                    return result;
+                  });
+                  
+                  // Clear feedback states and reset flag after reset
+                  setTimeout(() => {
+                    setFeedbackStates(prev => ({
+                      ...prev,
+                      [updatedChildren[0].id]: { show: false, type: null },
+                      [updatedChildren[1].id]: { show: false, type: null }
+                    }));
+                    isResettingRef.current = false;
+                    setHasIncorrectMove(false);
+                    processedFactorPairs.current.clear(); // Clear processed factor pairs
+                    setShouldResetNodes(new Set()); // Clear shouldReset flags
+                  }, 100); // Small delay to ensure reset happens first
+                }, 1100); // Match the feedback animation duration
               }
             } else {
               console.log(`Child values not complete for ${node.id}: [${updatedChildValues[0]}, ${updatedChildValues[1]}]`);
@@ -532,6 +638,8 @@ export default forwardRef<{ handleFullyFactored: () => void }, Props>(function F
     const feedback = feedbackStates[node.id] || { show: false, type: null };
     const isNewNode = newNodes.has(node.id);
     
+
+    
     // Get position from treePositionModel
     const x = treePositionModel?.positions[node.row]?.[node.column]?.x || 0;
     const y = treePositionModel?.positions[node.row]?.[node.column]?.y || 0;
@@ -551,6 +659,7 @@ export default forwardRef<{ handleFullyFactored: () => void }, Props>(function F
             nodeId={node.id}
             nodeState={node.nodeState}
             initialValue={node.initialValue}
+            shouldReset={shouldResetNodes.has(node.id)}
             handleFactorInput={handleFactorInput}
             onNodeClick={handleNodeClick}
             showFeedback={feedback.show}
