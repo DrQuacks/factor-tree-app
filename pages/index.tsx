@@ -2,7 +2,7 @@ import Head from 'next/head';
 import { useState, useEffect, useRef } from 'react';
 import FactorTree from '../components/FactorTree';
 import NavBar from '../components/Navbar';
-import { generateFactorTree, getNextHint, isPrime } from '../lib/factorUtils';
+import { generateFactorTree, isPrime } from '../lib/factorUtils';
 
 export default function Home() {
   const [incorrectMoves, setIncorrectMoves] = useState(0);
@@ -12,7 +12,7 @@ export default function Home() {
   const [showSolution, setShowSolution] = useState(false);
   const [gameComplete, setGameComplete] = useState(false);
   const [showValidationFailed, setShowValidationFailed] = useState(false);
-  const factorTreeRef = useRef<{ handleFullyFactored: () => void } | null>(null);
+  const factorTreeRef = useRef<{ handleFullyFactored: () => void; getHint: () => string | null } | null>(null);
 
   const handleIncorrectMove = () => {
     setIncorrectMoves(prev => prev + 1);
@@ -33,14 +33,25 @@ export default function Home() {
   };
 
   const handleHint = () => {
-    const hint = getNextHint({ value: currentNumber, isPrime: isPrime(currentNumber), children: [] });
-    setHintText(hint);
-    setShowHint(true);
-    
-    // Hide hint after 5 seconds
-    setTimeout(() => {
-      setShowHint(false);
-    }, 5000);
+    const hint = factorTreeRef.current?.getHint();
+    if (hint) {
+      setHintText(hint);
+      setShowHint(true);
+      
+      // Hide hint after 5 seconds
+      setTimeout(() => {
+        setShowHint(false);
+      }, 5000);
+    } else {
+      // No hint available - show a different message
+      setHintText("No hint available - the tree is fully factored!");
+      setShowHint(true);
+      
+      // Hide hint after 3 seconds
+      setTimeout(() => {
+        setShowHint(false);
+      }, 3000);
+    }
   };
 
   const handleSolution = () => {
@@ -109,6 +120,14 @@ export default function Home() {
             >
               Continue
             </button>
+          </div>
+        </div>
+      )}
+      {showHint && (
+        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-blue-100 border border-blue-300 rounded-lg p-4 shadow-lg z-40 max-w-md">
+          <div className="flex items-center gap-2">
+            <span className="text-blue-600 text-lg">💡</span>
+            <p className="text-blue-800 font-medium">{hintText}</p>
           </div>
         </div>
       )}

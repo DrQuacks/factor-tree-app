@@ -47,9 +47,10 @@ interface Props {
   showSolution: boolean;
   onFullyFactored: () => void;
   onValidationFailed: () => void;
+  onHintUsed?: () => void; // Optional callback when hint is used
 }
 
-export default forwardRef<{ handleFullyFactored: () => void }, Props>(function FactorTree({ initialNumber, onIncorrectMove, onCorrectMove, showSolution, onFullyFactored, onValidationFailed }, ref) {
+export default forwardRef<{ handleFullyFactored: () => void; getHint: () => string | null }, Props>(function FactorTree({ initialNumber, onIncorrectMove, onCorrectMove, showSolution, onFullyFactored, onValidationFailed, onHintUsed }, ref) {
   const [treeData, setTreeData] = useState<TreeNode[]>([]);
   const [feedbackStates, setFeedbackStates] = useState<Record<string, { show: boolean; type: 'correct' | 'incorrect' | null }>>({});
   const [treePositionModel, setTreePositionModel] = useState<TreePositionModel | null>(null);
@@ -66,9 +67,68 @@ export default forwardRef<{ handleFullyFactored: () => void }, Props>(function F
   const processedFactorPairs = useRef<Set<string>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Expose handleFullyFactored to parent component
+  // Hint system functions
+  const getHint = (): string | null => {
+    // Priority 1: Check for nodes with empty factor pairs (input state with childValues [0,0])
+    const nodesWithEmptyFactors = findNodesWithEmptyFactors(treeData);
+    if (nodesWithEmptyFactors.length > 0) {
+      const node = nodesWithEmptyFactors[0]; // Take the first one
+      const factors = getFactorPair(node.value);
+      if (factors) {
+        return `Try factoring ${node.value} into ${factors[0]} × ${factors[1]}`;
+      }
+    }
+
+    // Priority 2: Check for composite nodes that can be factored
+    const compositeNodes = findCompositeNodes(treeData);
+    if (compositeNodes.length > 0) {
+      const node = compositeNodes[0]; // Take the first one
+      return `You can factor ${node.value} further (it's not prime)`;
+    }
+
+    // No hint available - tree is fully factored
+    return null;
+  };
+
+  // Helper function to find nodes with empty factor pairs
+  const findNodesWithEmptyFactors = (nodes: TreeNode[]): TreeNode[] => {
+    const result: TreeNode[] = [];
+    
+    const traverse = (node: TreeNode) => {
+      // Check if this node has children in input state with incomplete values
+      if (node.children.length === 2 && 
+          node.children[0].nodeState === 'input' && 
+          node.children[1].nodeState === 'input' &&
+          (node.childValues[0] === 0 || node.childValues[1] === 0)) {
+        result.push(node);
+      }
+      node.children.forEach(traverse);
+    };
+    
+    nodes.forEach(traverse);
+    return result;
+  };
+
+  // Helper function to find composite nodes that can be factored
+  const findCompositeNodes = (nodes: TreeNode[]): TreeNode[] => {
+    const result: TreeNode[] = [];
+    
+    const traverse = (node: TreeNode) => {
+      // Check if this is a composite node in button state (can be clicked)
+      if (node.nodeState === 'button' && !node.isPrime) {
+        result.push(node);
+      }
+      node.children.forEach(traverse);
+    };
+    
+    nodes.forEach(traverse);
+    return result;
+  };
+
+  // Expose handleFullyFactored and getHint to parent component
   useImperativeHandle(ref, () => ({
-    handleFullyFactored
+    handleFullyFactored,
+    getHint
   }));
 
   // Initialize tree with the starting number
