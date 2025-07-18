@@ -26,4 +26,13 @@ export const FACTOR_TREE_CONSTANTS = {
   // Line styling
   LINE_STROKE_WIDTH: 1,
   LINE_ANIMATION_DURATION: 0.6,
-} as const; 
+} as const;
+
+// Game difficulty levels
+export const GAME_DIFFICULTY = {
+  EASY: [12, 16, 20, 24, 28, 32, 36, 40, 44, 48],
+  MEDIUM: [84, 100, 120, 150, 180, 200, 225, 250, 300, 350],
+  HARD: [420, 500, 600, 720, 840, 900, 1000, 1200, 1500, 1800],
+} as const;
+
+export type DifficultyLevel = keyof typeof GAME_DIFFICULTY; 

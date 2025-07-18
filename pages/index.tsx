@@ -3,9 +3,11 @@ import { useState, useEffect, useRef } from 'react';
 import FactorTree from '../components/FactorTree';
 import NavBar from '../components/Navbar';
 import { generateFactorTree, isPrime } from '../lib/factorUtils';
+import { GAME_DIFFICULTY, DifficultyLevel } from '../lib/constants';
 
 export default function Home() {
   const [incorrectMoves, setIncorrectMoves] = useState(0);
+  const [currentDifficulty, setCurrentDifficulty] = useState<DifficultyLevel>('MEDIUM');
   const [currentNumber, setCurrentNumber] = useState(84);
   const [showHint, setShowHint] = useState(false);
   const [hintText, setHintText] = useState('');
@@ -68,10 +70,23 @@ export default function Home() {
   };
 
   const handleNewGame = () => {
-    // Generate a new composite number for the game
-    const compositeNumbers = [84, 100, 120, 150, 180, 200, 225, 250, 300];
-    const randomIndex = Math.floor(Math.random() * compositeNumbers.length);
-    setCurrentNumber(compositeNumbers[randomIndex]);
+    // Generate a new composite number for the current difficulty
+    const numbers = GAME_DIFFICULTY[currentDifficulty];
+    const randomIndex = Math.floor(Math.random() * numbers.length);
+    setCurrentNumber(numbers[randomIndex]);
+    setIncorrectMoves(0);
+    setShowHint(false);
+    setShowSolution(false);
+    setGameComplete(false);
+    setShowValidationFailed(false);
+  };
+
+  const handleDifficultyChange = (difficulty: DifficultyLevel) => {
+    setCurrentDifficulty(difficulty);
+    // Generate a new number for the selected difficulty
+    const numbers = GAME_DIFFICULTY[difficulty];
+    const randomIndex = Math.floor(Math.random() * numbers.length);
+    setCurrentNumber(numbers[randomIndex]);
     setIncorrectMoves(0);
     setShowHint(false);
     setShowSolution(false);
@@ -95,6 +110,8 @@ export default function Home() {
         onSolution={handleSolution}
         onLoginSignUp={handleLoginSignUp}
         onFullyFactored={handleFullyFactored}
+        onDifficultyChange={handleDifficultyChange}
+        currentDifficulty={currentDifficulty}
         incorrectMoves={incorrectMoves}
       />
       {gameComplete && (

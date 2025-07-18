@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { DifficultyLevel } from '../lib/constants';
 
 interface NavBarProps {
   onNewNumber: () => void;
@@ -6,11 +7,14 @@ interface NavBarProps {
   onSolution: () => void;
   onLoginSignUp: () => void;
   onFullyFactored: () => void;
+  onDifficultyChange: (difficulty: DifficultyLevel) => void;
+  currentDifficulty: DifficultyLevel;
   incorrectMoves: number;
 }
 
-const NavBar = ({ onNewNumber, onHint, onSolution, onLoginSignUp, onFullyFactored, incorrectMoves }: NavBarProps) => {
+const NavBar = ({ onNewNumber, onHint, onSolution, onLoginSignUp, onFullyFactored, onDifficultyChange, currentDifficulty, incorrectMoves }: NavBarProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showDifficultySubmenu, setShowDifficultySubmenu] = useState(false);
 
   return (
     <div className="relative w-full flex items-center justify-between px-6 py-2 border-b border-gray-200" style={{ backgroundColor: '#FCF9F2' }}>
@@ -31,6 +35,53 @@ const NavBar = ({ onNewNumber, onHint, onSolution, onLoginSignUp, onFullyFactore
             >
               New Number
             </button>
+            
+            {/* Difficulty Selection */}
+            <div className="relative border-b border-slate-100">
+              <button
+                onClick={() => setShowDifficultySubmenu(!showDifficultySubmenu)}
+                className="flex items-center justify-between w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+              >
+                <span>Difficulty</span>
+                <span className="text-xs">▶</span>
+              </button>
+              
+              {showDifficultySubmenu && (
+                <div className="absolute left-full top-0 ml-1 bg-white border border-slate-200 rounded-md shadow-lg z-50 min-w-32">
+                  <button
+                    onClick={() => { onDifficultyChange('EASY'); setIsMenuOpen(false); setShowDifficultySubmenu(false); }}
+                    className={`block w-full text-left px-4 py-2 text-sm transition-colors ${
+                      currentDifficulty === 'EASY' 
+                        ? 'text-indigo-700 bg-indigo-50' 
+                        : 'text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    Easy
+                  </button>
+                  <button
+                    onClick={() => { onDifficultyChange('MEDIUM'); setIsMenuOpen(false); setShowDifficultySubmenu(false); }}
+                    className={`block w-full text-left px-4 py-2 text-sm transition-colors ${
+                      currentDifficulty === 'MEDIUM' 
+                        ? 'text-indigo-700 bg-indigo-50' 
+                        : 'text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    Medium
+                  </button>
+                  <button
+                    onClick={() => { onDifficultyChange('HARD'); setIsMenuOpen(false); setShowDifficultySubmenu(false); }}
+                    className={`block w-full text-left px-4 py-2 text-sm transition-colors ${
+                      currentDifficulty === 'HARD' 
+                        ? 'text-indigo-700 bg-indigo-50' 
+                        : 'text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    Hard
+                  </button>
+                </div>
+              )}
+            </div>
+            
             <button
               onClick={() => { onHint(); setIsMenuOpen(false); }}
               className="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors border-b border-slate-100"
