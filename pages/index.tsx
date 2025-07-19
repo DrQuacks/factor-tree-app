@@ -103,6 +103,7 @@ export default function Home() {
     <div className="h-screen flex flex-col" style={{ backgroundColor: '#FCF9F2' }}>
       <Head>
         <title>Prime Factor Tree</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
       </Head>
       <NavBar
         onNewNumber={handleNewGame}
@@ -115,12 +116,12 @@ export default function Home() {
         incorrectMoves={incorrectMoves}
       />
       {gameComplete && (
-        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 text-center">
-            <p className="text-xl font-semibold mb-4">🎉 Congratulations!</p>
+        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 sm:p-8 text-center max-w-sm w-full">
+            <p className="text-lg sm:text-xl font-semibold mb-4">🎉 Congratulations!</p>
             <button 
               onClick={handleNewGame}
-              className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition-colors"
+              className="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded hover:bg-blue-700 transition-colors text-sm sm:text-base"
             >
               New Game
             </button>
@@ -128,12 +129,12 @@ export default function Home() {
         </div>
       )}
       {showValidationFailed && (
-        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 text-center">
-            <p className="text-xl font-semibold mb-4 text-red-600">❌ Keep Trying</p>
+        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 sm:p-8 text-center max-w-sm w-full">
+            <p className="text-lg sm:text-xl font-semibold mb-4 text-red-600">❌ Keep Trying</p>
             <button 
               onClick={() => setShowValidationFailed(false)}
-              className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition-colors"
+              className="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded hover:bg-blue-700 transition-colors text-sm sm:text-base"
             >
               Continue
             </button>
@@ -141,15 +142,15 @@ export default function Home() {
         </div>
       )}
       {showHint && (
-        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-blue-100 border border-blue-300 rounded-lg p-4 shadow-lg z-40 max-w-md">
+        <div className="absolute top-16 sm:top-20 left-1/2 transform -translate-x-1/2 bg-blue-100 border border-blue-300 rounded-lg p-3 sm:p-4 shadow-lg z-40 max-w-xs sm:max-w-md mx-4">
           <div className="flex items-center gap-2">
-            <span className="text-blue-600 text-lg">💡</span>
-            <p className="text-blue-800 font-medium">{hintText}</p>
+            <span className="text-blue-600 text-base sm:text-lg">💡</span>
+            <p className="text-blue-800 font-medium text-sm sm:text-base">{hintText}</p>
           </div>
         </div>
       )}
       {/* Game Area - Takes up most of the screen */}
-      <div className="flex-1 flex items-center justify-center p-8">
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-8">
         <FactorTree
           initialNumber={currentNumber}
           onIncorrectMove={handleIncorrectMove}

@@ -110,7 +110,9 @@ function FactorNode({
           border: '1px solid black',
           transform: isAnimating ? 'translateY(-20px)' : 'translateY(0)',
           opacity: getOpacity(),
-          transition: 'opacity 0.3s ease-in-out'
+          transition: 'opacity 0.3s ease-in-out',
+          minHeight: '44px', // Minimum touch target size for mobile
+          minWidth: '44px'
         }}
         onClick={nodeState === 'button' ? handleClick : undefined}
       >
@@ -173,7 +175,9 @@ function FactorNode({
           border: '1px solid black',
           transform: isAnimating ? 'translateY(-20px)' : 'translateY(0)',
           opacity: getOpacity(),
-          transition: 'opacity 0.3s ease-in-out'
+          transition: 'opacity 0.3s ease-in-out',
+          minHeight: '44px', // Minimum touch target size for mobile
+          minWidth: '44px'
         }}
         autoFocus
       />
