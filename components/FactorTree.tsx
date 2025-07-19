@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import FactorNode from './FactorNode';
-import { isPrime, getFactorPair } from '../lib/factorUtils';
+import { isPrime, getFactorPair, generateFactorTree as generateCompleteFactorTree } from '../lib/factorUtils';
 import { generateTreeModel } from '../lib/generateTreeModel';
 
 // Define the TreeNode type with ONLY row/column positioning
@@ -125,6 +125,50 @@ export default forwardRef<{ handleFullyFactored: () => void; getHint: () => stri
     return result;
   };
 
+  // Function to generate complete solution tree
+  const generateSolutionTree = (number: number): TreeNode => {
+    const completeTree = generateCompleteFactorTree(number);
+    
+    const convertToTreeNode = (node: any, id: string, row: number, column: number, parentId: string): TreeNode => {
+      const children: TreeNode[] = [];
+      
+      if (node.children.length > 0) {
+        // Create left child
+        children.push(convertToTreeNode(
+          node.children[0], 
+          `${id}-left`, 
+          row + 1, 
+          column * 2, 
+          id
+        ));
+        
+        // Create right child
+        children.push(convertToTreeNode(
+          node.children[1], 
+          `${id}-right`, 
+          row + 1, 
+          column * 2 + 1, 
+          id
+        ));
+      }
+      
+      return {
+        id,
+        value: node.value,
+        initialValue: node.value,
+        isPrime: node.isPrime,
+        children,
+        row,
+        column,
+        nodeState: node.isPrime ? 'number' : 'number',
+        parentId,
+        childValues: children.length === 2 ? [children[0].value, children[1].value] : [0, 0]
+      };
+    };
+    
+    return convertToTreeNode(completeTree, 'root', 0, 0, 'none');
+  };
+
   // Expose handleFullyFactored and getHint to parent component
   useImperativeHandle(ref, () => ({
     handleFullyFactored,
@@ -139,6 +183,32 @@ export default forwardRef<{ handleFullyFactored: () => void; getHint: () => stri
     setLeafNodes(['root']); // Root starts as a leaf node
     setShouldResetNodes(new Set(['root'])); // Reset root node for new game
   }, [initialNumber]);
+
+  // Handle solution display
+  useEffect(() => {
+    if (showSolution) {
+      const solutionTree = generateSolutionTree(initialNumber);
+      setTreeData([solutionTree]);
+      
+      // Calculate max level from solution tree
+      const calculateMaxLevel = (node: TreeNode): number => {
+        if (node.children.length === 0) return node.row;
+        return Math.max(...node.children.map(calculateMaxLevel));
+      };
+      const newMaxLevel = calculateMaxLevel(solutionTree);
+      setMaxLevel(newMaxLevel);
+      
+      // Set all nodes as leaf nodes (no more input needed)
+      const getAllNodeIds = (node: TreeNode): string[] => {
+        const ids = [node.id];
+        node.children.forEach(child => {
+          ids.push(...getAllNodeIds(child));
+        });
+        return ids;
+      };
+      setLeafNodes(getAllNodeIds(solutionTree));
+    }
+  }, [showSolution, initialNumber]);
 
   // Generate tree position model when max level changes or container resizes
   useEffect(() => {
@@ -660,6 +730,13 @@ export default forwardRef<{ handleFullyFactored: () => void; getHint: () => stri
   // Handle Fully Factored button click
   const handleFullyFactored = () => {
     console.log('Checking leaf nodes for prime validation:', leafNodes);
+    
+    // If solution is being shown, always return success
+    if (showSolution) {
+      console.log('Solution is being shown - returning success');
+      onCorrectMove();
+      return;
+    }
     
     // Check if all leaf nodes are prime
     const allLeafNodesPrime = leafNodes.every(leafId => {
