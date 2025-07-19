@@ -94,10 +94,7 @@ export default function Home() {
     setShowValidationFailed(false);
   };
 
-  const handleLoginSignUp = () => {
-    // Placeholder for login/signup functionality
-    console.log('Login/Sign Up clicked');
-  };
+
 
   return (
     <div className="h-screen flex flex-col" style={{ backgroundColor: '#FCF9F2' }}>
@@ -109,7 +106,6 @@ export default function Home() {
         onNewNumber={handleNewGame}
         onHint={handleHint}
         onSolution={handleSolution}
-        onLoginSignUp={handleLoginSignUp}
         onFullyFactored={handleFullyFactored}
         onDifficultyChange={handleDifficultyChange}
         currentDifficulty={currentDifficulty}

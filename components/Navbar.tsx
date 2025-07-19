@@ -1,20 +1,25 @@
 import { useState } from 'react';
+import { useSession, signIn, signOut } from 'next-auth/react';
 import { DifficultyLevel } from '../lib/constants';
+import UserProfile from './UserProfile';
+import Image from 'next/image';
 
 interface NavBarProps {
   onNewNumber: () => void;
   onHint: () => void;
   onSolution: () => void;
-  onLoginSignUp: () => void;
   onFullyFactored: () => void;
   onDifficultyChange: (difficulty: DifficultyLevel) => void;
   currentDifficulty: DifficultyLevel;
   incorrectMoves: number;
 }
 
-const NavBar = ({ onNewNumber, onHint, onSolution, onLoginSignUp, onFullyFactored, onDifficultyChange, currentDifficulty, incorrectMoves }: NavBarProps) => {
+const NavBar = ({ onNewNumber, onHint, onSolution, onFullyFactored, onDifficultyChange, currentDifficulty, incorrectMoves }: NavBarProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showDifficultySubmenu, setShowDifficultySubmenu] = useState(false);
+  const [showUserProfile, setShowUserProfile] = useState(false);
+  const [showMobileUserProfile, setShowMobileUserProfile] = useState(false);
+  const { data: session } = useSession();
 
   return (
     <div className="relative w-full border-b border-gray-200" style={{ backgroundColor: '#FCF9F2' }}>
@@ -23,7 +28,14 @@ const NavBar = ({ onNewNumber, onHint, onSolution, onLoginSignUp, onFullyFactore
         {/* Left side - Accordion Menu */}
         <div className="relative">
           <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            onClick={() => {
+              setIsMenuOpen(!isMenuOpen);
+              if (isMenuOpen) {
+                setShowDifficultySubmenu(false);
+                setShowUserProfile(false);
+                setShowMobileUserProfile(false);
+              }
+            }}
             className="px-4 py-2 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors border border-slate-200 bg-white shadow-sm"
           >
             ☰
@@ -41,7 +53,13 @@ const NavBar = ({ onNewNumber, onHint, onSolution, onLoginSignUp, onFullyFactore
               {/* Difficulty Selection */}
               <div className="relative border-b border-slate-100">
                 <button
-                  onClick={() => setShowDifficultySubmenu(!showDifficultySubmenu)}
+                  onClick={() => {
+                    setShowDifficultySubmenu(!showDifficultySubmenu);
+                    if (!showDifficultySubmenu) {
+                      setShowUserProfile(false);
+                      setShowMobileUserProfile(false);
+                    }
+                  }}
                   className="flex items-center justify-between w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
                 >
                   <span>Difficulty</span>
@@ -96,12 +114,28 @@ const NavBar = ({ onNewNumber, onHint, onSolution, onLoginSignUp, onFullyFactore
               >
                 Solution
               </button>
-              <button
-                onClick={() => { onLoginSignUp(); setIsMenuOpen(false); }}
-                className="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-              >
-                Login/Sign Up
-              </button>
+              {session ? (
+                <button
+                  onClick={() => { 
+                    setShowUserProfile(!showUserProfile); 
+                    if (!showUserProfile) {
+                      setShowDifficultySubmenu(false);
+                      setShowMobileUserProfile(false);
+                    }
+                    setIsMenuOpen(false); 
+                  }}
+                  className="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  Profile
+                </button>
+              ) : (
+                <button
+                  onClick={() => { signIn(); setIsMenuOpen(false); }}
+                  className="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  Login/Sign Up
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -124,6 +158,36 @@ const NavBar = ({ onNewNumber, onHint, onSolution, onLoginSignUp, onFullyFactore
           >
             Fully Factored
           </button>
+          
+          {/* User Profile Button */}
+          {session?.user && (
+            <div className="relative">
+              <button
+                onClick={() => setShowUserProfile(!showUserProfile)}
+                className="flex items-center space-x-2 p-2 rounded-md hover:bg-slate-50 transition-colors"
+              >
+                {session.user.image ? (
+                  <div className="relative w-8 h-8 rounded-full overflow-hidden">
+                    <Image
+                      src={session.user.image}
+                      alt={session.user.name || 'User'}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center">
+                    <span className="text-white text-sm font-medium">
+                      {session.user.name?.charAt(0) || 'U'}
+                    </span>
+                  </div>
+                )}
+              </button>
+              {showUserProfile && (
+                <UserProfile onClose={() => setShowUserProfile(false)} />
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -132,7 +196,14 @@ const NavBar = ({ onNewNumber, onHint, onSolution, onLoginSignUp, onFullyFactore
         {/* First Column - Hamburger Menu */}
         <div className="relative flex items-center">
           <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            onClick={() => {
+              setIsMenuOpen(!isMenuOpen);
+              if (isMenuOpen) {
+                setShowDifficultySubmenu(false);
+                setShowUserProfile(false);
+                setShowMobileUserProfile(false);
+              }
+            }}
             className="px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors border border-slate-200 bg-white shadow-sm"
           >
             ☰
@@ -150,7 +221,13 @@ const NavBar = ({ onNewNumber, onHint, onSolution, onLoginSignUp, onFullyFactore
               {/* Difficulty Selection */}
               <div className="relative border-b border-slate-100">
                 <button
-                  onClick={() => setShowDifficultySubmenu(!showDifficultySubmenu)}
+                  onClick={() => {
+                    setShowDifficultySubmenu(!showDifficultySubmenu);
+                    if (!showDifficultySubmenu) {
+                      setShowUserProfile(false);
+                      setShowMobileUserProfile(false);
+                    }
+                  }}
                   className="flex items-center justify-between w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
                 >
                   <span>Difficulty</span>
@@ -205,12 +282,67 @@ const NavBar = ({ onNewNumber, onHint, onSolution, onLoginSignUp, onFullyFactore
               >
                 Solution
               </button>
-              <button
-                onClick={() => { onLoginSignUp(); setIsMenuOpen(false); }}
-                className="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-              >
-                Login/Sign Up
-              </button>
+              {session ? (
+                <div className="relative">
+                  <button
+                    onClick={() => { 
+                      setShowMobileUserProfile(!showMobileUserProfile); 
+                      if (!showMobileUserProfile) {
+                        setShowDifficultySubmenu(false);
+                        setShowUserProfile(false);
+                      }
+                    }}
+                    className="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                  >
+                    Profile
+                  </button>
+                  {showMobileUserProfile && (
+                    <div className="absolute left-full top-0 ml-1 bg-white border border-slate-200 rounded-md shadow-lg z-50 w-40">
+                      <div className="p-2 border-b border-slate-100">
+                        <div className="flex items-center space-x-2">
+                          {session.user.image && (
+                            <div className="relative w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
+                              <Image
+                                src={session.user.image}
+                                alt={session.user.name || 'User'}
+                                fill
+                                className="object-cover"
+                              />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-slate-900 truncate">
+                              {session.user.name}
+                            </p>
+                            <p className="text-xs text-slate-500 truncate">
+                              {session.user.email}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-1">
+                        <button
+                          onClick={() => { 
+                            signOut({ callbackUrl: '/' }); 
+                            setShowMobileUserProfile(false);
+                            setIsMenuOpen(false);
+                          }}
+                          className="w-full text-left px-2 py-1 text-xs text-slate-700 hover:bg-slate-50 rounded transition-colors"
+                        >
+                          Sign out
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={() => { signIn(); setIsMenuOpen(false); }}
+                  className="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  Login/Sign Up
+                </button>
+              )}
             </div>
           )}
         </div>
