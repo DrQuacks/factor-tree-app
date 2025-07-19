@@ -1,11 +1,14 @@
 import Head from 'next/head';
 import { useState, useEffect, useRef } from 'react';
+import { useSession } from 'next-auth/react';
 import FactorTree from '../components/FactorTree';
 import NavBar from '../components/Navbar';
 import { generateFactorTree, isPrime } from '../lib/factorUtils';
 import { GAME_DIFFICULTY, DifficultyLevel } from '../lib/constants';
+import { recordGame } from '../lib/database';
 
 export default function Home() {
+  const { data: session } = useSession();
   const [incorrectMoves, setIncorrectMoves] = useState(0);
   const [currentDifficulty, setCurrentDifficulty] = useState<DifficultyLevel>('MEDIUM');
   const [currentNumber, setCurrentNumber] = useState(84);
@@ -14,17 +17,34 @@ export default function Home() {
   const [showSolution, setShowSolution] = useState(false);
   const [gameComplete, setGameComplete] = useState(false);
   const [showValidationFailed, setShowValidationFailed] = useState(false);
+  const [gameRecorded, setGameRecorded] = useState(false);
   const factorTreeRef = useRef<{ handleFullyFactored: () => void; getHint: () => string | null } | null>(null);
 
   const handleIncorrectMove = () => {
     setIncorrectMoves(prev => prev + 1);
   };
 
-  const handleCorrectMove = () => {
+  const handleCorrectMove = async () => {
     // Check if the entire tree is complete
     const solutionTree = generateFactorTree(currentNumber);
-    // For now, just show success message
+    // Show success message
     setGameComplete(true);
+    
+    // Record the completed game
+    if (session?.user?.email && !gameRecorded) {
+      try {
+        await recordGame(
+          session.user.email,
+          currentNumber,
+          currentDifficulty,
+          incorrectMoves,
+          true // completed
+        );
+        setGameRecorded(true);
+      } catch (error) {
+        console.error('Error recording game:', error);
+      }
+    }
   };
 
   const handleFullyFactored = () => {
@@ -69,7 +89,22 @@ export default function Home() {
     setShowValidationFailed(true);
   };
 
-  const handleNewGame = () => {
+  const handleNewGame = async () => {
+    // Record the current game as abandoned if it was in progress
+    if (session?.user?.email && !gameRecorded && incorrectMoves > 0) {
+      try {
+        await recordGame(
+          session.user.email,
+          currentNumber,
+          currentDifficulty,
+          incorrectMoves,
+          false // not completed
+        );
+      } catch (error) {
+        console.error('Error recording abandoned game:', error);
+      }
+    }
+    
     // Generate a new composite number for the current difficulty
     const numbers = GAME_DIFFICULTY[currentDifficulty];
     const randomIndex = Math.floor(Math.random() * numbers.length);
@@ -79,9 +114,25 @@ export default function Home() {
     setShowSolution(false);
     setGameComplete(false);
     setShowValidationFailed(false);
+    setGameRecorded(false);
   };
 
-  const handleDifficultyChange = (difficulty: DifficultyLevel) => {
+  const handleDifficultyChange = async (difficulty: DifficultyLevel) => {
+    // Record the current game as abandoned if it was in progress
+    if (session?.user?.email && !gameRecorded && incorrectMoves > 0) {
+      try {
+        await recordGame(
+          session.user.email,
+          currentNumber,
+          currentDifficulty,
+          incorrectMoves,
+          false // not completed
+        );
+      } catch (error) {
+        console.error('Error recording abandoned game:', error);
+      }
+    }
+    
     setCurrentDifficulty(difficulty);
     // Generate a new number for the selected difficulty
     const numbers = GAME_DIFFICULTY[difficulty];
@@ -92,6 +143,7 @@ export default function Home() {
     setShowSolution(false);
     setGameComplete(false);
     setShowValidationFailed(false);
+    setGameRecorded(false);
   };
 
 

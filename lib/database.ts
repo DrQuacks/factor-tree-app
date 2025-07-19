@@ -1,0 +1,120 @@
+import { supabase, UserStats, GameRecord, DifficultyStats } from './supabase';
+
+// Get user statistics
+export async function getUserStats(userId: string): Promise<UserStats | null> {
+  const { data, error } = await supabase
+    .from('user_stats')
+    .select('*')
+    .eq('id', userId)
+    .single();
+
+  if (error) {
+    console.error('Error fetching user stats:', error);
+    return null;
+  }
+
+  return data;
+}
+
+// Record a new game
+export async function recordGame(
+  userId: string,
+  number: number,
+  difficulty: string,
+  incorrectMoves: number,
+  completed: boolean
+): Promise<boolean> {
+  const { error } = await supabase
+    .from('game_records')
+    .insert({
+      user_id: userId,
+      number,
+      difficulty,
+      incorrect_moves: incorrectMoves,
+      completed
+    });
+
+  if (error) {
+    console.error('Error recording game:', error);
+    return false;
+  }
+
+  return true;
+}
+
+// Get recent games for a user
+export async function getRecentGames(userId: string, limit: number = 5): Promise<GameRecord[]> {
+  const { data, error } = await supabase
+    .from('game_records')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error('Error fetching recent games:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+// Get difficulty breakdown for a user
+export async function getDifficultyStats(userId: string): Promise<DifficultyStats[]> {
+  const { data, error } = await supabase
+    .from('difficulty_stats')
+    .select('*')
+    .eq('user_id', userId);
+
+  if (error) {
+    console.error('Error fetching difficulty stats:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+// Get number history for a specific number
+export async function getNumberHistory(userId: string, number: number): Promise<GameRecord[]> {
+  const { data, error } = await supabase
+    .rpc('get_number_history', {
+      user_email: userId,
+      target_number: number
+    });
+
+  if (error) {
+    console.error('Error fetching number history:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+// Get how many times a user has played a specific number
+export async function getNumberPlayCount(userId: string, number: number): Promise<number> {
+  const { count, error } = await supabase
+    .from('game_records')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('number', number);
+
+  if (error) {
+    console.error('Error fetching number play count:', error);
+    return 0;
+  }
+
+  return count || 0;
+}
+
+// Create or update user stats (fallback if trigger doesn't work)
+export async function upsertUserStats(userId: string): Promise<boolean> {
+  const { error } = await supabase
+    .rpc('upsert_user_stats', { user_uuid: userId });
+
+  if (error) {
+    console.error('Error upserting user stats:', error);
+    return false;
+  }
+
+  return true;
+} 
