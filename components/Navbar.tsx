@@ -115,19 +115,30 @@ const NavBar = ({ onNewNumber, onHint, onSolution, onFullyFactored, onDifficulty
                 Solution
               </button>
               {session ? (
-                <button
-                  onClick={() => { 
-                    setShowUserProfile(!showUserProfile); 
-                    if (!showUserProfile) {
-                      setShowDifficultySubmenu(false);
-                      setShowMobileUserProfile(false);
-                    }
-                    setIsMenuOpen(false); 
-                  }}
-                  className="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                >
-                  Profile
-                </button>
+                <>
+                  <button
+                    onClick={() => { 
+                      window.location.href = '/dashboard';
+                      setIsMenuOpen(false); 
+                    }}
+                    className="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors border-b border-slate-100"
+                  >
+                    Dashboard
+                  </button>
+                  <button
+                    onClick={() => { 
+                      setShowUserProfile(!showUserProfile); 
+                      if (!showUserProfile) {
+                        setShowDifficultySubmenu(false);
+                        setShowMobileUserProfile(false);
+                      }
+                      setIsMenuOpen(false); 
+                    }}
+                    className="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                  >
+                    Profile
+                  </button>
+                </>
               ) : (
                 <button
                   onClick={() => { signIn(); setIsMenuOpen(false); }}
@@ -142,9 +153,13 @@ const NavBar = ({ onNewNumber, onHint, onSolution, onFullyFactored, onDifficulty
 
         {/* Center - Title */}
         <div className="absolute left-1/2 transform -translate-x-1/2 h-full flex items-center">
-          <div className="text-2xl md:text-3xl font-light tracking-wider" style={{ color: '#4A6FA5', fontFamily: 'Georgia, serif' }}>
+          <button
+            onClick={() => window.location.href = '/'}
+            className="text-2xl md:text-3xl font-light tracking-wider hover:opacity-80 transition-opacity cursor-pointer"
+            style={{ color: '#4A6FA5', fontFamily: 'Georgia, serif' }}
+          >
             Prime Factor Trees
-          </div>
+          </button>
         </div>
 
         {/* Right side - Fully Factored button and Incorrect indicator */}
@@ -283,19 +298,29 @@ const NavBar = ({ onNewNumber, onHint, onSolution, onFullyFactored, onDifficulty
                 Solution
               </button>
               {session ? (
-                <div className="relative">
+                <>
                   <button
                     onClick={() => { 
-                      setShowMobileUserProfile(!showMobileUserProfile); 
-                      if (!showMobileUserProfile) {
-                        setShowDifficultySubmenu(false);
-                        setShowUserProfile(false);
-                      }
+                      window.location.href = '/dashboard';
+                      setIsMenuOpen(false); 
                     }}
-                    className="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                    className="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors border-b border-slate-100"
                   >
-                    Profile
+                    Dashboard
                   </button>
+                  <div className="relative">
+                    <button
+                      onClick={() => { 
+                        setShowMobileUserProfile(!showMobileUserProfile); 
+                        if (!showMobileUserProfile) {
+                          setShowDifficultySubmenu(false);
+                          setShowUserProfile(false);
+                        }
+                      }}
+                      className="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
+                      Profile
+                    </button>
                   {showMobileUserProfile && (
                     <div className="absolute left-full top-0 ml-1 bg-white border border-slate-200 rounded-md shadow-lg z-50 w-40">
                       <div className="p-2 border-b border-slate-100">
@@ -335,6 +360,7 @@ const NavBar = ({ onNewNumber, onHint, onSolution, onFullyFactored, onDifficulty
                     </div>
                   )}
                 </div>
+                </>
               ) : (
                 <button
                   onClick={() => { signIn(); setIsMenuOpen(false); }}
@@ -349,9 +375,13 @@ const NavBar = ({ onNewNumber, onHint, onSolution, onFullyFactored, onDifficulty
         
         {/* Second Column - Title */}
         <div className="flex-1 flex justify-center">
-          <div className="text-2xl font-light tracking-wider text-center" style={{ color: '#4A6FA5', fontFamily: 'Georgia, serif' }}>
+          <button
+            onClick={() => window.location.href = '/'}
+            className="text-2xl font-light tracking-wider text-center hover:opacity-80 transition-opacity cursor-pointer"
+            style={{ color: '#4A6FA5', fontFamily: 'Georgia, serif' }}
+          >
             Prime Factor Trees
-          </div>
+          </button>
         </div>
         
         {/* Third Column - Counter and Button (2 rows) */}
