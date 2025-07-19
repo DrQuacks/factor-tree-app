@@ -11,7 +11,15 @@ export default function Home() {
   const { data: session } = useSession();
   const [incorrectMoves, setIncorrectMoves] = useState(0);
   const [currentDifficulty, setCurrentDifficulty] = useState<DifficultyLevel>('MEDIUM');
-  const [currentNumber, setCurrentNumber] = useState(84);
+  
+  // Initialize with a random number from MEDIUM difficulty
+  const getRandomNumber = (difficulty: DifficultyLevel) => {
+    const numbers = GAME_DIFFICULTY[difficulty];
+    const randomIndex = Math.floor(Math.random() * numbers.length);
+    return numbers[randomIndex];
+  };
+  
+  const [currentNumber, setCurrentNumber] = useState(() => getRandomNumber('MEDIUM'));
   const [showHint, setShowHint] = useState(false);
   const [hintText, setHintText] = useState('');
   const [showSolution, setShowSolution] = useState(false);
@@ -19,6 +27,11 @@ export default function Home() {
   const [showValidationFailed, setShowValidationFailed] = useState(false);
   const [gameRecorded, setGameRecorded] = useState(false);
   const factorTreeRef = useRef<{ handleFullyFactored: () => void; getHint: () => string | null } | null>(null);
+
+  // Ensure we get a fresh random number on each page load
+  useEffect(() => {
+    setCurrentNumber(getRandomNumber(currentDifficulty));
+  }, []); // Empty dependency array means this runs once on mount
 
   const handleIncorrectMove = () => {
     setIncorrectMoves(prev => prev + 1);
@@ -106,9 +119,7 @@ export default function Home() {
     }
     
     // Generate a new composite number for the current difficulty
-    const numbers = GAME_DIFFICULTY[currentDifficulty];
-    const randomIndex = Math.floor(Math.random() * numbers.length);
-    setCurrentNumber(numbers[randomIndex]);
+    setCurrentNumber(getRandomNumber(currentDifficulty));
     setIncorrectMoves(0);
     setShowHint(false);
     setShowSolution(false);
@@ -135,9 +146,7 @@ export default function Home() {
     
     setCurrentDifficulty(difficulty);
     // Generate a new number for the selected difficulty
-    const numbers = GAME_DIFFICULTY[difficulty];
-    const randomIndex = Math.floor(Math.random() * numbers.length);
-    setCurrentNumber(numbers[randomIndex]);
+    setCurrentNumber(getRandomNumber(difficulty));
     setIncorrectMoves(0);
     setShowHint(false);
     setShowSolution(false);
