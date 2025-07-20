@@ -29,7 +29,7 @@ export const FACTOR_TREE_CONSTANTS = {
 } as const;
 
 // Probability of getting a prime number instead of a composite number
-export const PRIME_NUMBER_PROBABILITY = 0.2;
+export const PRIME_NUMBER_PROBABILITY = 0.15;
 
 // Game difficulty levels - Composite numbers
 export const GAME_DIFFICULTY = {

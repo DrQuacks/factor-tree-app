@@ -101,6 +101,7 @@ export default function Dashboard() {
         currentDifficulty="MEDIUM"
         incorrectMoves={0}
         showGameControls={false}
+        isOnDashboard={true}
       />
 
       <div className="max-w-6xl mx-auto px-4 py-8">
