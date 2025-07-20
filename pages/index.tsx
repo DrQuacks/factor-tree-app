@@ -4,7 +4,7 @@ import { useSession } from 'next-auth/react';
 import FactorTree from '../components/FactorTree';
 import NavBar from '../components/Navbar';
 import { generateFactorTree, isPrime } from '../lib/factorUtils';
-import { GAME_DIFFICULTY, DifficultyLevel } from '../lib/constants';
+import { GAME_DIFFICULTY, PRIME_NUMBERS, PRIME_NUMBER_PROBABILITY, DifficultyLevel } from '../lib/constants';
 import { recordGame } from '../lib/database';
 
 export default function Home() {
@@ -14,9 +14,18 @@ export default function Home() {
   
   // Initialize with a random number from MEDIUM difficulty
   const getRandomNumber = (difficulty: DifficultyLevel) => {
-    const numbers = GAME_DIFFICULTY[difficulty];
-    const randomIndex = Math.floor(Math.random() * numbers.length);
-    return numbers[randomIndex];
+    // 20% chance to get a prime number, 80% chance to get a composite number
+    const shouldGetPrime = Math.random() < PRIME_NUMBER_PROBABILITY;
+    
+    if (shouldGetPrime) {
+      const primeNumbers = PRIME_NUMBERS[difficulty];
+      const randomIndex = Math.floor(Math.random() * primeNumbers.length);
+      return primeNumbers[randomIndex];
+    } else {
+      const compositeNumbers = GAME_DIFFICULTY[difficulty];
+      const randomIndex = Math.floor(Math.random() * compositeNumbers.length);
+      return compositeNumbers[randomIndex];
+    }
   };
   
   const [currentNumber, setCurrentNumber] = useState(() => getRandomNumber('MEDIUM'));

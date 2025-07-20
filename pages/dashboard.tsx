@@ -100,6 +100,7 @@ export default function Dashboard() {
         onDifficultyChange={() => router.push('/')}
         currentDifficulty="MEDIUM"
         incorrectMoves={0}
+        showGameControls={false}
       />
 
       <div className="max-w-6xl mx-auto px-4 py-8">
