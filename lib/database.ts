@@ -108,8 +108,55 @@ export async function getNumberPlayCount(userId: string, number: number): Promis
 
 // Create or update user stats (fallback if trigger doesn't work)
 export async function upsertUserStats(userId: string): Promise<boolean> {
+  // First, get the current stats from game_records
+  const { data: games, error: gamesError } = await supabase
+    .from('game_records')
+    .select('*')
+    .eq('user_id', userId);
+
+  if (gamesError) {
+    console.error('Error fetching games for stats:', gamesError);
+    return false;
+  }
+
+  // Calculate stats
+  const totalGames = games?.length || 0;
+  const gamesCompleted = games?.filter(g => g.completed).length || 0;
+  const totalIncorrectMoves = games?.reduce((sum, g) => sum + g.incorrect_moves, 0) || 0;
+
+  // Calculate streaks (simplified)
+  let currentStreak = 0;
+  let longestStreak = 0;
+  let tempStreak = 0;
+
+  if (games) {
+    // Sort by created_at descending to process most recent first
+    const sortedGames = games.sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
+    for (const game of sortedGames) {
+      if (game.completed) {
+        tempStreak++;
+        if (tempStreak === 1) currentStreak = tempStreak; // Most recent streak
+        longestStreak = Math.max(longestStreak, tempStreak);
+      } else {
+        tempStreak = 0;
+      }
+    }
+  }
+
+  // Upsert the stats
   const { error } = await supabase
-    .rpc('upsert_user_stats', { user_uuid: userId });
+    .from('user_stats')
+    .upsert({
+      id: userId,
+      total_games: totalGames,
+      games_completed: gamesCompleted,
+      total_incorrect_moves: totalIncorrectMoves,
+      current_streak: currentStreak,
+      longest_streak: longestStreak
+    }, { onConflict: 'id' });
 
   if (error) {
     console.error('Error upserting user stats:', error);

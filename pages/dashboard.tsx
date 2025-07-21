@@ -4,8 +4,30 @@ import { useEffect, useState } from 'react';
 import Head from 'next/head';
 import NavBar from '../components/Navbar';
 import { DifficultyLevel } from '../lib/constants';
-import { getUserStats, getRecentGames, getDifficultyStats, getNumberHistory } from '../lib/database';
+import { getUserStats, getRecentGames, getDifficultyStats, getNumberHistory, upsertUserStats } from '../lib/database';
 import { UserStats, GameRecord, DifficultyStats } from '../lib/supabase';
+
+// Helper function to get skiing difficulty indicators
+const getDifficultyIndicator = (difficulty: string, completed: boolean, number?: number) => {
+  if (!completed) {
+    return <div className="w-7 h-7 bg-red-500 rounded-full flex items-center justify-center text-xs font-bold text-white">{number}</div>;
+  }
+  
+  switch (difficulty) {
+    case 'EASY':
+      return <div className="w-7 h-7 bg-green-500 rounded-full flex items-center justify-center text-xs font-bold text-white">{number}</div>;
+    case 'MEDIUM':
+      return <div className="w-7 h-7 bg-blue-500 rounded flex items-center justify-center text-xs font-bold text-white">{number}</div>;
+    case 'HARD':
+      return (
+        <div className="w-7 h-7 bg-black rounded transform rotate-45 flex items-center justify-center text-xs font-bold text-white">
+          <span className="transform -rotate-45 w-full flex items-center justify-center text-center">{number}</span>
+        </div>
+      );
+    default:
+      return <div className="w-7 h-7 bg-gray-500 rounded-full flex items-center justify-center text-xs font-bold text-white">{number}</div>;
+  }
+};
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
@@ -29,6 +51,10 @@ export default function Dashboard() {
       
       try {
         setLoading(true);
+        
+        // First, ensure user stats are up to date
+        await upsertUserStats(session.user.email);
+        
         const [stats, games, diffStats] = await Promise.all([
           getUserStats(session.user.email),
           getRecentGames(session.user.email),
@@ -119,21 +145,21 @@ export default function Dashboard() {
               <div className="p-2 bg-blue-100 rounded-lg">
                 <span className="text-2xl">🎯</span>
               </div>
-                             <div className="ml-4">
-                 <p className="text-sm font-medium text-gray-600">Games Completed</p>
-                 <p className="text-2xl font-bold text-gray-900">{userStats.games_completed}</p>
-               </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Games Completed</p>
+                <p className="text-2xl font-bold text-gray-900">{userStats.games_completed}</p>
+              </div>
             </div>
           </div>
 
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <span className="text-2xl">📊</span>
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <span className="text-2xl">➗</span>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Completion Rate</p>
-                <p className="text-2xl font-bold text-gray-900">{completionRate}%</p>
+                <p className="text-sm font-medium text-gray-600">Avg. Incorrect Moves</p>
+                <p className="text-2xl font-bold text-gray-900">{averageIncorrectMoves}</p>
               </div>
             </div>
           </div>
@@ -143,25 +169,25 @@ export default function Dashboard() {
               <div className="p-2 bg-yellow-100 rounded-lg">
                 <span className="text-2xl">⚡</span>
               </div>
-                             <div className="ml-4">
-                 <p className="text-sm font-medium text-gray-600">Current Streak</p>
-                 <p className="text-2xl font-bold text-gray-900">{userStats.current_streak}</p>
-               </div>
-             </div>
-           </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Current Streak</p>
+                <p className="text-2xl font-bold text-gray-900">{userStats.current_streak}</p>
+              </div>
+            </div>
+          </div>
 
-           <div className="bg-white rounded-lg shadow-md p-6">
-             <div className="flex items-center">
-               <div className="p-2 bg-purple-100 rounded-lg">
-                 <span className="text-2xl">🎖️</span>
-               </div>
-               <div className="ml-4">
-                 <p className="text-sm font-medium text-gray-600">Avg. Incorrect</p>
-                 <p className="text-2xl font-bold text-gray-900">{averageIncorrectMoves}</p>
-               </div>
-             </div>
-           </div>
-         </div>
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <span className="text-2xl">🎖️</span>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Longest Streak</p>
+                <p className="text-2xl font-bold text-gray-900">{userStats.longest_streak}</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
          {/* Difficulty Breakdown */}
          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
@@ -191,15 +217,13 @@ export default function Dashboard() {
                {recentGames.map((game, index) => (
                 <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-3">
-                    <div className={`w-3 h-3 rounded-full ${game.completed ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                    {getDifficultyIndicator(game.difficulty, game.completed, game.number)}
                     <div>
-                      <p className="font-medium text-gray-900">Number {game.number}</p>
                       <p className="text-sm text-gray-600">{game.difficulty} • {new Date(game.created_at).toLocaleDateString()}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                                          <p className="font-medium text-gray-900">{game.incorrect_moves} incorrect</p>
-                    <p className="text-sm text-gray-600">{game.completed ? 'Completed' : 'Incomplete'}</p>
+                    <p className="font-medium text-gray-900">{game.incorrect_moves} incorrect</p>
                   </div>
                 </div>
               ))}
@@ -236,36 +260,31 @@ export default function Dashboard() {
                       const bestAttempt = attempts.reduce((best, current) => 
                         current.incorrect_moves < best.incorrect_moves ? current : best
                       );
-                      const completedAttempts = attempts.filter(a => a.completed).length;
-                      
                       return (
                         <tr key={number} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">{number}</div>
+                            {getDifficultyIndicator(bestAttempt.difficulty, true, Number(number))}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">{attempts.length}</div>
-                            <div className="text-xs text-gray-500">{completedAttempts} completed</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">{bestAttempt.incorrect_moves} incorrect</div>
-                            <div className="text-xs text-gray-500">
-                              {bestAttempt.completed ? 'Completed' : 'Incomplete'}
-                            </div>
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex flex-wrap gap-1">
                               {attempts.slice(0, 5).map((attempt, index) => (
                                 <div
                                   key={index}
-                                  className={`px-2 py-1 text-xs rounded-full ${
-                                    attempt.completed 
-                                      ? 'bg-green-100 text-green-800' 
-                                      : 'bg-red-100 text-red-800'
-                                  }`}
+                                  className="flex flex-col items-center bg-gray-50 rounded px-2 py-1 min-w-[70px]"
                                   title={`${attempt.incorrect_moves} incorrect moves - ${new Date(attempt.created_at).toLocaleDateString()}`}
                                 >
-                                  {attempt.incorrect_moves}
+                                  <span className="text-xs font-medium text-gray-700">
+                                    {new Date(attempt.created_at).toLocaleDateString()}
+                                  </span>
+                                  <span className="text-xs text-gray-500">
+                                    {attempt.incorrect_moves} incorrect
+                                  </span>
                                 </div>
                               ))}
                               {attempts.length > 5 && (

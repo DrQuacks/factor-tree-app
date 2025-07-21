@@ -55,14 +55,28 @@ export default function Home() {
     // Record the completed game
     if (session?.user?.email && !gameRecorded) {
       try {
-        await recordGame(
+        console.log('Recording completed game:', {
+          user: session.user.email,
+          number: currentNumber,
+          difficulty: currentDifficulty,
+          incorrectMoves,
+          completed: true
+        });
+        
+        const success = await recordGame(
           session.user.email,
           currentNumber,
           currentDifficulty,
           incorrectMoves,
           true // completed
         );
-        setGameRecorded(true);
+        
+        if (success) {
+          console.log('Game recorded successfully');
+          setGameRecorded(true);
+        } else {
+          console.error('Failed to record game');
+        }
       } catch (error) {
         console.error('Error recording game:', error);
       }

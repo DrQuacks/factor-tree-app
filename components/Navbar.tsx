@@ -406,22 +406,53 @@ const NavBar = ({ onNewNumber, onHint, onSolution, onFullyFactored, onDifficulty
           </button>
         </div>
         
-        {/* Third Column - Counter and Button (2 rows) */}
-        <div className="flex flex-col space-y-1">
-          {/* Top Row - Incorrect Counter */}
-          <div className="flex items-center justify-end space-x-2 px-2 py-2 rounded-md bg-slate-100">
-            <span className="text-xs font-medium text-slate-600">Incorrect:</span>
-            <span className="text-xs font-bold text-slate-600">{incorrectMoves}</span>
+        {/* Third Column - Profile Avatar (only on dashboard) */}
+        {isOnDashboard && session?.user && (
+          <div className="flex items-center ml-2">
+            <button
+              onClick={() => setShowUserProfile(!showUserProfile)}
+              className="flex items-center space-x-2 p-1 rounded-full hover:bg-slate-100 transition-colors"
+            >
+              {session.user.image ? (
+                <div className="relative w-8 h-8 rounded-full overflow-hidden">
+                  <Image
+                    src={session.user.image}
+                    alt={session.user.name || 'User'}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center">
+                  <span className="text-white text-sm font-medium">
+                    {session.user.name?.charAt(0) || 'U'}
+                  </span>
+                </div>
+              )}
+            </button>
+            {showUserProfile && (
+              <UserProfile onClose={() => setShowUserProfile(false)} />
+            )}
           </div>
-          
-          {/* Bottom Row - Factored Button */}
-          <button
-            onClick={onFullyFactored}
-            className="px-2 py-2 rounded-md text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-sm"
-          >
-            Factored
-          </button>
-        </div>
+        )}
+        
+        {/* Third Column - Counter and Button (2 rows) */}
+        {showGameControls && (
+          <div className="flex flex-col space-y-1">
+            {/* Top Row - Incorrect Counter */}
+            <div className="flex items-center justify-end space-x-2 px-2 py-2 rounded-md bg-slate-100">
+              <span className="text-xs font-medium text-slate-600">Incorrect:</span>
+              <span className="text-xs font-bold text-slate-600">{incorrectMoves}</span>
+            </div>
+            {/* Bottom Row - Factored Button */}
+            <button
+              onClick={onFullyFactored}
+              className="px-2 py-2 rounded-md text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-sm"
+            >
+              Factored
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
