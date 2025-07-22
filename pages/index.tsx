@@ -31,8 +31,6 @@ export default function Home() {
   const [currentNumber, setCurrentNumber] = useState(() => getRandomNumber('MEDIUM'));
   const [showHint, setShowHint] = useState(false);
   const [hintText, setHintText] = useState('');
-  const [showSolution, setShowSolution] = useState(false);
-  const [gameComplete, setGameComplete] = useState(false);
   const [showValidationFailed, setShowValidationFailed] = useState(false);
   const [gameRecorded, setGameRecorded] = useState(false);
   const factorTreeRef = useRef<{ handleFullyFactored: () => void; getHint: () => string | null } | null>(null);
@@ -49,8 +47,6 @@ export default function Home() {
   const handleCorrectMove = async () => {
     // Check if the entire tree is complete
     const solutionTree = generateFactorTree(currentNumber);
-    // Show success message
-    setGameComplete(true);
     
     // Record the completed game
     if (session?.user?.email && !gameRecorded) {
@@ -112,15 +108,6 @@ export default function Home() {
     }
   };
 
-  const handleSolution = () => {
-    setShowSolution(true);
-    
-    // Hide solution after 10 seconds
-    setTimeout(() => {
-      setShowSolution(false);
-    }, 10000);
-  };
-
   const handleValidationFailed = () => {
     setShowValidationFailed(true);
   };
@@ -145,9 +132,6 @@ export default function Home() {
     setCurrentNumber(getRandomNumber(currentDifficulty));
     setIncorrectMoves(0);
     setShowHint(false);
-    setShowSolution(false);
-    setGameComplete(false);
-    setShowValidationFailed(false);
     setGameRecorded(false);
   };
 
@@ -172,9 +156,6 @@ export default function Home() {
     setCurrentNumber(getRandomNumber(difficulty));
     setIncorrectMoves(0);
     setShowHint(false);
-    setShowSolution(false);
-    setGameComplete(false);
-    setShowValidationFailed(false);
     setGameRecorded(false);
   };
 
@@ -189,13 +170,12 @@ export default function Home() {
       <NavBar
         onNewNumber={handleNewGame}
         onHint={handleHint}
-        onSolution={handleSolution}
         onFullyFactored={handleFullyFactored}
         onDifficultyChange={handleDifficultyChange}
         currentDifficulty={currentDifficulty}
         incorrectMoves={incorrectMoves}
       />
-      {gameComplete && (
+      {gameRecorded && (
         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 sm:p-8 text-center max-w-sm w-full">
             <p className="text-lg sm:text-xl font-semibold mb-4">🎉 Congratulations!</p>
@@ -235,7 +215,7 @@ export default function Home() {
           initialNumber={currentNumber}
           onIncorrectMove={handleIncorrectMove}
           onCorrectMove={handleCorrectMove}
-          showSolution={showSolution}
+          showSolution={false} // Removed showSolution prop
           onFullyFactored={handleFullyFactored}
           onValidationFailed={handleValidationFailed}
           ref={factorTreeRef}

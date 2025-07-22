@@ -7,7 +7,6 @@ import Image from 'next/image';
 interface NavBarProps {
   onNewNumber: () => void;
   onHint: () => void;
-  onSolution: () => void;
   onFullyFactored: () => void;
   onDifficultyChange: (difficulty: DifficultyLevel) => void;
   currentDifficulty: DifficultyLevel;
@@ -16,7 +15,7 @@ interface NavBarProps {
   isOnDashboard?: boolean; // New prop to detect if on dashboard
 }
 
-const NavBar = ({ onNewNumber, onHint, onSolution, onFullyFactored, onDifficultyChange, currentDifficulty, incorrectMoves, showGameControls = true, isOnDashboard = false }: NavBarProps) => {
+const NavBar = ({ onNewNumber, onHint, onFullyFactored, onDifficultyChange, currentDifficulty, incorrectMoves, showGameControls = true, isOnDashboard = false }: NavBarProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showDifficultySubmenu, setShowDifficultySubmenu] = useState(false);
   const [showUserProfile, setShowUserProfile] = useState(false);
@@ -111,12 +110,6 @@ const NavBar = ({ onNewNumber, onHint, onSolution, onFullyFactored, onDifficulty
                     className="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors border-b border-slate-100"
                   >
                     Hint
-                  </button>
-                  <button
-                    onClick={() => { onSolution(); setIsMenuOpen(false); }}
-                    className="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors border-b border-slate-100"
-                  >
-                    Solution
                   </button>
                 </>
               )}
@@ -307,12 +300,6 @@ const NavBar = ({ onNewNumber, onHint, onSolution, onFullyFactored, onDifficulty
                     className="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors border-b border-slate-100"
                   >
                     Hint
-                  </button>
-                  <button
-                    onClick={() => { onSolution(); setIsMenuOpen(false); }}
-                    className="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors border-b border-slate-100"
-                  >
-                    Solution
                   </button>
                 </>
               ) : null}

@@ -2,13 +2,11 @@ import IncorrectMoves from "./IncorrectMoves";
 
 const Footer = ({ 
     handleHint, 
-    handleSolution, 
     handleFullyFactored, 
     incorrectMoves,
     handleNewGame 
   }:{
     handleHint: () => void, 
-    handleSolution: () => void, 
     handleFullyFactored: () => void, 
     incorrectMoves: number,
     handleNewGame: () => void
@@ -31,16 +29,6 @@ const Footer = ({
               style={{ backgroundColor: '#008379' }}
             >
               Hint
-            </button>
-            <button 
-              className="px-4 py-2 rounded transition-colors"
-              style={{
-                backgroundColor: '#DB8C9B',
-                color: '#000000'
-              }}
-              onClick={handleSolution}
-            >
-              Solution
             </button>
           </div>
           {/* Center */}

@@ -30,12 +30,6 @@ export default function ControlButtons({
         >
           Hint
         </button>
-        <button 
-          className="bg-gray-600 text-white px-3 py-1.5 rounded text-sm hover:bg-gray-700 transition-colors"
-          onClick={onSolution}
-        >
-          Solution
-        </button>
       </div>
       
       {showHint && hintText && (
@@ -44,11 +38,6 @@ export default function ControlButtons({
         </div>
       )}
       
-      {showSolution && (
-        <div className="bg-gray-50 border border-gray-200 text-gray-700 px-3 py-1.5 rounded text-sm">
-          Complete solution shown
-        </div>
-      )}
     </div>
   );
 }

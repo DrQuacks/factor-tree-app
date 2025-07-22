@@ -121,7 +121,6 @@ export default function Dashboard() {
       <NavBar
         onNewNumber={() => router.push('/')}
         onHint={() => router.push('/')}
-        onSolution={() => router.push('/')}
         onFullyFactored={() => router.push('/')}
         onDifficultyChange={() => router.push('/')}
         currentDifficulty="MEDIUM"
@@ -193,28 +192,36 @@ export default function Dashboard() {
          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
            <div className="bg-white rounded-lg shadow-md p-6">
              <h2 className="text-xl font-semibold mb-4" style={{ color: '#4A6FA5' }}>Performance by Difficulty</h2>
-             <div className="space-y-4">
-               {difficultyStats.map((stats) => (
-                 <div key={stats.difficulty} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                   <div>
-                     <p className="font-medium text-gray-900">{stats.difficulty}</p>
-                     <p className="text-sm text-gray-600">{stats.completed}/{stats.played} completed</p>
-                   </div>
-                   <div className="text-right">
-                     <p className="font-medium text-gray-900">{stats.avg_incorrect || 0} avg incorrect</p>
-                     <p className="text-sm text-gray-600">
-                       {stats.played > 0 ? Math.round((stats.completed / stats.played) * 100) : 0}% success
-                     </p>
-                   </div>
-                 </div>
-               ))}
+             <div className="overflow-x-auto">
+               <table className="min-w-full divide-y divide-gray-200">
+                 <thead className="bg-gray-50">
+                   <tr>
+                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Difficulty</th>
+                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completed</th>
+                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg. Incorrect</th>
+                   </tr>
+                 </thead>
+                 <tbody className="bg-white divide-y divide-gray-200">
+                   {/* Sort by completed descending */}
+                   {difficultyStats
+                     .slice()
+                     .sort((a, b) => b.completed - a.completed)
+                     .map((stats) => (
+                       <tr key={stats.difficulty}>
+                         <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{stats.difficulty}</td>
+                         <td className="px-6 py-4 whitespace-nowrap text-gray-900">{stats.completed}</td>
+                         <td className="px-6 py-4 whitespace-nowrap text-gray-900">{stats.avg_incorrect || 0}</td>
+                       </tr>
+                     ))}
+                 </tbody>
+               </table>
              </div>
            </div>
 
            <div className="bg-white rounded-lg shadow-md p-6">
              <h2 className="text-xl font-semibold mb-4" style={{ color: '#4A6FA5' }}>Recent Games</h2>
              <div className="space-y-3">
-               {recentGames.map((game, index) => (
+               {recentGames.slice(0, 4).map((game, index) => (
                 <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     {getDifficultyIndicator(game.difficulty, game.completed, game.number)}

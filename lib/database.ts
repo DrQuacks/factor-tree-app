@@ -124,7 +124,7 @@ export async function upsertUserStats(userId: string): Promise<boolean> {
   const gamesCompleted = games?.filter(g => g.completed).length || 0;
   const totalIncorrectMoves = games?.reduce((sum, g) => sum + g.incorrect_moves, 0) || 0;
 
-  // Calculate streaks (simplified)
+  // Calculate streaks (now: most consecutive games completed with zero incorrect moves)
   let currentStreak = 0;
   let longestStreak = 0;
   let tempStreak = 0;
@@ -136,7 +136,7 @@ export async function upsertUserStats(userId: string): Promise<boolean> {
     );
 
     for (const game of sortedGames) {
-      if (game.completed) {
+      if (game.completed && game.incorrect_moves === 0) {
         tempStreak++;
         if (tempStreak === 1) currentStreak = tempStreak; // Most recent streak
         longestStreak = Math.max(longestStreak, tempStreak);
