@@ -90,6 +90,23 @@ export async function getNumberHistory(userId: string, number: number): Promise<
   return data || [];
 }
 
+// Get all unique numbers a user has played
+export async function getAllUserNumbers(userId: string): Promise<number[]> {
+  const { data, error } = await supabase
+    .from('game_records')
+    .select('number')
+    .eq('user_id', userId);
+
+  if (error) {
+    console.error('Error fetching user numbers:', error);
+    return [];
+  }
+
+  // Extract unique numbers
+  const uniqueNumbers = Array.from(new Set(data?.map(record => record.number) || []));
+  return uniqueNumbers.sort((a, b) => a - b);
+}
+
 // Get how many times a user has played a specific number
 export async function getNumberPlayCount(userId: string, number: number): Promise<number> {
   const { count, error } = await supabase

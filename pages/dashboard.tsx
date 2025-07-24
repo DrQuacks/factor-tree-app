@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Head from 'next/head';
 import NavBar from '../components/Navbar';
 import { DifficultyLevel } from '../lib/constants';
-import { getUserStats, getRecentGames, getDifficultyStats, getNumberHistory, upsertUserStats } from '../lib/database';
+import { getUserStats, getRecentGames, getDifficultyStats, getNumberHistory, getAllUserNumbers, upsertUserStats } from '../lib/database';
 import { UserStats, GameRecord, DifficultyStats } from '../lib/supabase';
 
 // Helper function to get skiing difficulty indicators
@@ -66,7 +66,7 @@ export default function Dashboard() {
         setDifficultyStats(diffStats);
         
         // Load number history for all unique numbers played
-        const uniqueNumbers = Array.from(new Set(games.map(game => game.number)));
+        const uniqueNumbers = await getAllUserNumbers(session.user.email);
         const historyData: {[key: number]: GameRecord[]} = {};
         
         for (const number of uniqueNumbers) {
@@ -243,69 +243,71 @@ export default function Dashboard() {
           <h2 className="text-xl font-semibold mb-4" style={{ color: '#4A6FA5' }}>Number History</h2>
           {Object.keys(numberHistory).length > 0 ? (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Number
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Attempts
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Best Score
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Recent Attempts
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {Object.entries(numberHistory)
-                    .sort(([a], [b]) => parseInt(a) - parseInt(b))
-                    .map(([number, attempts]) => {
-                      const bestAttempt = attempts.reduce((best, current) => 
-                        current.incorrect_moves < best.incorrect_moves ? current : best
-                      );
-                      return (
-                        <tr key={number} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {getDifficultyIndicator(bestAttempt.difficulty, true, Number(number))}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{attempts.length}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{bestAttempt.incorrect_moves} incorrect</div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex flex-wrap gap-1">
-                              {attempts.slice(0, 5).map((attempt, index) => (
-                                <div
-                                  key={index}
-                                  className="flex flex-col items-center bg-gray-50 rounded px-2 py-1 min-w-[70px]"
-                                  title={`${attempt.incorrect_moves} incorrect moves - ${new Date(attempt.created_at).toLocaleDateString()}`}
-                                >
-                                  <span className="text-xs font-medium text-gray-700">
-                                    {new Date(attempt.created_at).toLocaleDateString()}
-                                  </span>
-                                  <span className="text-xs text-gray-500">
-                                    {attempt.incorrect_moves} incorrect
-                                  </span>
-                                </div>
-                              ))}
-                              {attempts.length > 5 && (
-                                <div className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
-                                  +{attempts.length - 5}
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                </tbody>
-              </table>
+              <div className="max-h-96 overflow-y-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50 sticky top-0 z-10">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Number
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Attempts
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Best Score
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Recent Attempts
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {Object.entries(numberHistory)
+                      .sort(([a], [b]) => parseInt(a) - parseInt(b))
+                      .map(([number, attempts]) => {
+                        const bestAttempt = attempts.reduce((best, current) => 
+                          current.incorrect_moves < best.incorrect_moves ? current : best
+                        );
+                        return (
+                          <tr key={number} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              {getDifficultyIndicator(bestAttempt.difficulty, true, Number(number))}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{attempts.length}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{bestAttempt.incorrect_moves} incorrect</div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex flex-wrap gap-1">
+                                {attempts.slice(0, 5).map((attempt, index) => (
+                                  <div
+                                    key={index}
+                                    className="flex flex-col items-center bg-gray-50 rounded px-2 py-1 min-w-[70px]"
+                                    title={`${attempt.incorrect_moves} incorrect moves - ${new Date(attempt.created_at).toLocaleDateString()}`}
+                                  >
+                                    <span className="text-xs font-medium text-gray-700">
+                                      {new Date(attempt.created_at).toLocaleDateString()}
+                                    </span>
+                                    <span className="text-xs text-gray-500">
+                                      {attempt.incorrect_moves} incorrect
+                                    </span>
+                                  </div>
+                                ))}
+                                {attempts.length > 5 && (
+                                  <div className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
+                                    +{attempts.length - 5}
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           ) : (
             <p className="text-gray-500 text-center py-8">No number history available yet. Start playing to see your progress!</p>
